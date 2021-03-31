@@ -10,17 +10,10 @@ struct aTable {
 	char word[128][100];
 };
 
-char command_line [30][80];
-int counter;
-
 struct evTable varTable;
 
 struct aTable aliasTable;
 
 int aliasIndex, varIndex;
 
-char* subVars(char* var);
-
 char* subAliases(char* name);
-
-bool has_alias;
