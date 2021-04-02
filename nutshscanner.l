@@ -1,13 +1,14 @@
 %{
+// This is ONLY a demo micro-shell whose purpose is to illustrate the need for and how to handle nested alias substitutions and how to use Flex start conditions
+// This is to help students learn these specific capabilities, the code is by far not a complete nutshell by any means.
+// Only "alias name word", "cd word", and "bye" run. 
 #include "nutshparser.tab.h"
 #include <string.h>
 #include "global.h"
+#include <stdbool.h>
+#include <dirent.h>
 
-#ifdef DOESNT_HAVE_STRDUP
-#warning DOESNT_HAVE_STRDUP
-char *strdup(const char *s);
-#endif
-
+//#define unput(c) {yytchar= (c); if(yytchar=='\n') {yylineno--; *yysptr++=yytchar;}
 char* subAliases(char* name){
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], name) == 0) {
@@ -43,9 +44,10 @@ cd		            { return CD;}
 alias		        { return ALIAS; }
 "\n"		        { return END; }
 [\"]                 { BEGIN(string_condition); }
+ls                  { return LS; }
 {CHAR}+              {if(ifAlias(yytext)) {
-                        printf("yytext: %s\n", yytext);
-                        //source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
+                        printf("yytext before sub: %s\n", yytext);
+                        // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                            char *yycopy = strdup( subAliases(yytext) );
                            for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
                                unput( yycopy[i] );

@@ -1,22 +1,30 @@
 %{
+// This is ONLY a demo micro-shell whose purpose is to illustrate the need for and how to handle nested alias substitutions and Flex start conditions.
+// This is to help students learn these specific capabilities, the code is by far not a complete nutshell by any means.
+// Only "alias name word", "cd word", and "bye" run. 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include "global.h"
+#include <dirent.h>
 
-int yylex(void);
+int yylex();
 int yyerror(char *s);
+int runCD(char* arg);
+int runLS(char* arg);
+int runSetAlias(char *name, char *word);
 %}
 
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE CD STRING ALIAS END
+%token <string> BYE CD LS STRING ALIAS END
 
 %%
 cmd_line    :
 	BYE END 		                {exit(1); return 1; }
+	| LS STRING END					{runLS($2); return 1;}
 	| CD STRING END        			{runCD($2); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 
@@ -64,6 +72,32 @@ int runCD(char* arg) {
 		}
 	}
 	return 1;
+}
+
+int runLS(char* arg) {
+	if (arg[0] == '') { // no arg {
+		struct dirent *de;  // Pointer for directory entry
+  
+		DIR *dr = opendir(".");
+	
+		if (dr == NULL)
+		{
+			printf("Could not open current directory" );
+			return 0;
+		}
+	
+		while ((de = readdir(dr)) != NULL)
+				printf("%s\n", de->d_name);
+	
+		closedir(dr);    
+		return 0;		
+
+	}
+	else {
+
+	}
+	
+
 }
 
 int runSetAlias(char *name, char *word) {

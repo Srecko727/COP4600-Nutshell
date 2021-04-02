@@ -1,3 +1,5 @@
+// This is ONLY a demo micro-shell whose purpose is to illustrate the need for and how to handle nested alias substitutions and Flex start conditions.
+// This is to help students learn these specific capabilities, the code is by far not a complete nutshell by any means.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +7,7 @@
 #include <unistd.h>
 #include <limits.h>
 char *getcwd(char *buf, size_t size);
+int yyparse(); 
 
 int main()
 {
@@ -46,5 +49,5 @@ int main()
         yyparse();
     }
 
-   return 0;
+    return 0;
 }
