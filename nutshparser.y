@@ -14,12 +14,13 @@ int yyerror(char *s);
 int runCD(char* arg);
 int runLS(char* arg);
 int runSetAlias(char *name, char *word);
+int runUnalias(char *name);
 %}
 
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE CD SETENV PRINTENV UNSETENV HOME STRING ALIAS END
+%token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS END
 
 %%
 cmd_line    :
@@ -28,10 +29,10 @@ cmd_line    :
 	| SETENV STRING STRING END		{runSetenv($2,$3); return 1;}
 	| PRINTENV END					{runPrintenv(1); return 1;}
 	| UNSETENV STRING END			{runUnsetenv($2); return 1;}
-	| HOME END						{runHome(1); return 1;}
 
 	| CD STRING END        			{runCD($2); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
+	| UNALIAS STRING END			{runUnalias($2); return 1;}
 
 %%
 
@@ -94,11 +95,6 @@ int runUnsetenv(char *var)
 	unsetenv(var);
 }
 
-int runHome()
-{
-
-}
-
 int runSetAlias(char *name, char *word) {
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(name, word) == 0){
@@ -119,4 +115,21 @@ int runSetAlias(char *name, char *word) {
 	aliasIndex++;
 
 	return 1;
+}
+
+int runUnalias(char *name){
+	int position = 0;
+	for(int i = 0; i < aliasIndex; i++) {
+		if(strcmp(aliasTable.name[i] == 0)) {
+			position = i;
+			free(&(aliasTable.array[i].name));
+			free(&(aliasTable->array[i].value));
+			for(int j = position; j < table->currentElements;j++) {
+				table->array[j].name = table->array[j+1].name;
+				table->array[j].value = table->array[j+1].value;
+			}
+			table->currentElements--;
+		}
+	}
+	return 0;
 }
