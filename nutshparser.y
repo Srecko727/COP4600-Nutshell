@@ -19,12 +19,17 @@ int runSetAlias(char *name, char *word);
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE CD LS STRING ALIAS END
+%token <string> BYE CD SETENV PRINTENV UNSETENV HOME STRING ALIAS END
 
 %%
 cmd_line    :
 	BYE END 		                {exit(1); return 1; }
-	| LS STRING END					{runLS($2); return 1;}
+
+	| SETENV STRING STRING END		{runSetenv($2,$3); return 1;}
+	| PRINTENV END					{runPrintenv(1); return 1;}
+	| UNSETENV STRING END			{runUnsetenv($2); return 1;}
+	| HOME END						{runHome(1); return 1;}
+
 	| CD STRING END        			{runCD($2); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 
@@ -74,29 +79,23 @@ int runCD(char* arg) {
 	return 1;
 }
 
-int runLS(char* arg) {
-	if (arg[0] == '') { // no arg {
-		struct dirent *de;  // Pointer for directory entry
-  
-		DIR *dr = opendir(".");
-	
-		if (dr == NULL)
-		{
-			printf("Could not open current directory" );
-			return 0;
-		}
-	
-		while ((de = readdir(dr)) != NULL)
-				printf("%s\n", de->d_name);
-	
-		closedir(dr);    
-		return 0;		
+int runSetenv(char *var,char *word)
+{
+	setenv(var,word,1);
+}
 
-	}
-	else {
+int runPrintenv()
+{
+	printenv
+}
 
-	}
-	
+int runUnsetenv(char *var)
+{
+	unsetenv(var);
+}
+
+int runHome()
+{
 
 }
 
