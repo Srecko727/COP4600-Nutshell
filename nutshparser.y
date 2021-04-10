@@ -20,7 +20,7 @@ int runUnalias(char *name);
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS END
+%token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS UNALIAS END
 
 %%
 cmd_line    :
@@ -119,17 +119,15 @@ int runSetAlias(char *name, char *word) {
 
 int runUnalias(char *name){
 	int position = 0;
+	bool remove = false;
 	for(int i = 0; i < aliasIndex; i++) {
-		if(strcmp(aliasTable.name[i] == 0)) {
-			position = i;
-			free(&(aliasTable.array[i].name));
-			free(&(aliasTable->array[i].value));
-			for(int j = position; j < table->currentElements;j++) {
-				table->array[j].name = table->array[j+1].name;
-				table->array[j].value = table->array[j+1].value;
-			}
-			table->currentElements--;
+		if(strcmp(aliasTable.name[i] == name)) {
+			remove = true;
+		}
+		if(remove == true){
+			aliasTable.name[i] = aliasTable.name[i+1];
 		}
 	}
+	aliasIndex--;
 	return 0;
 }
