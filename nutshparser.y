@@ -13,7 +13,6 @@
 int yylex();
 int yyerror(char *s);
 int runCD(char* arg);
-int runLS(char* arg);
 int runSetAlias(char *name, char *word);
 int runUnalias(char *name);
 int runSetenv(char *var,char *word);
@@ -128,12 +127,12 @@ int runSetAlias(char *name, char *word) {
 int runUnalias(char *name){
     int position = 0;
     bool remove = false;
-    for(int i = 0; i < aliasIndex; i++) {
-        if(strcmp(aliasTable.name[i] == name)) {
+    for(int i = 0; i < aliasIndex-1; i++) {
+        if(aliasTable.name[i] == name) {
             remove = true;
         }
         if(remove == true){
-            aliasTable.name[i] = aliasTable.name[i+1];
+            strcpy(aliasTable.name[i], aliasTable.name[i+1]);
         }
     }
     aliasIndex--;

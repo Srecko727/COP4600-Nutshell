@@ -43,8 +43,9 @@ bye                 { return BYE; }
 cd		            { return CD;}
 alias		        { return ALIAS; }
 "\n"		        { return END; }
-[\"]                 { BEGIN(string_condition); }
-ls                  { return LS; }
+[\"]                { BEGIN(string_condition); }
+unalias             { return UNALIAS; }
+printenv            { return PRINTENV;}
 {CHAR}+              {if(ifAlias(yytext)) {
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
