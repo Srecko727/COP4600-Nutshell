@@ -8,6 +8,7 @@
 #include <string.h>
 #include "global.h"
 #include <dirent.h>
+#include <stdbool.h>
 
 int yylex();
 int yyerror(char *s);
@@ -15,12 +16,15 @@ int runCD(char* arg);
 int runLS(char* arg);
 int runSetAlias(char *name, char *word);
 int runUnalias(char *name);
+int runSetenv(char *var,char *word);
+int runUnsetenv(char *var);
+int runPrintenv();
 %}
 
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS END
+%token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS UNALIAS END
 
 %%
 cmd_line    :
@@ -87,7 +91,11 @@ int runSetenv(char *var,char *word)
 
 int runPrintenv()
 {
-	printenv
+	extern char **environ;
+	for (int i=0;environ[i] != NULL; i++)
+	{
+		printf("%s\n",environ[i]);
+	}
 }
 
 int runUnsetenv(char *var)
@@ -118,18 +126,16 @@ int runSetAlias(char *name, char *word) {
 }
 
 int runUnalias(char *name){
-	int position = 0;
-	for(int i = 0; i < aliasIndex; i++) {
-		if(strcmp(aliasTable.name[i] == 0)) {
-			position = i;
-			free(&(aliasTable.array[i].name));
-			free(&(aliasTable->array[i].value));
-			for(int j = position; j < table->currentElements;j++) {
-				table->array[j].name = table->array[j+1].name;
-				table->array[j].value = table->array[j+1].value;
-			}
-			table->currentElements--;
-		}
-	}
-	return 0;
+    int position = 0;
+    bool remove = false;
+    for(int i = 0; i < aliasIndex; i++) {
+        if(strcmp(aliasTable.name[i] == name)) {
+            remove = true;
+        }
+        if(remove == true){
+            aliasTable.name[i] = aliasTable.name[i+1];
+        }
+    }
+    aliasIndex--;
+    return 0;
 }
