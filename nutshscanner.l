@@ -45,6 +45,8 @@ alias		        { return ALIAS; }
 "\n"		        { return END; }
 [\"]                { BEGIN(string_condition); }
 unalias             { return UNALIAS; }
+setenv              { return SETENV; }
+unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV;}
 {CHAR}+              {if(ifAlias(yytext)) {
                         printf("yytext before sub: %s\n", yytext);

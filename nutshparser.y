@@ -86,6 +86,7 @@ int runCD(char* arg) {
 int runSetenv(char *var,char *word)
 {
 	setenv(var,word,1);
+	return 0;
 }
 
 int runPrintenv()
@@ -95,14 +96,23 @@ int runPrintenv()
 	{
 		printf("%s\n",environ[i]);
 	}
+	return 0;
 }
 
 int runUnsetenv(char *var)
 {
 	unsetenv(var);
+	return 0;
 }
 
 int runSetAlias(char *name, char *word) {
+	if(name == NULL && word == NULL){
+		for(int i = 0; i < aliasIndex; i++){
+			printf("%s"" ",aliasTable.name[i]);
+			printf("%s\n",aliasTable.word[i]);
+		}
+	}
+	
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(name, word) == 0){
 			printf("Error, expansion of \"%s\" would create a loop.\n", name);
