@@ -19,12 +19,15 @@ int runPrintAlias();
 int runSetenv(char *var,char *word);
 int runUnsetenv(char *var);
 int runPrintenv();
+int runPathCount(char *path);
+int runCMD(char *command);
+char** splitPath();
 %}
 
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS UNALIAS END
+%token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS UNALIAS CMD END
 
 %%
 cmd_line    :
@@ -38,6 +41,7 @@ cmd_line    :
 	| ALIAS END						{runPrintAlias(1); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| UNALIAS STRING END			{runUnalias($2); return 1;}
+	| CMD STRING END				{runCMD($2); return 1;}
 
 %%
 
@@ -103,7 +107,16 @@ int runPrintenv()
 
 int runUnsetenv(char *var)
 {
-	unsetenv(var);
+	printf("%s", var);
+	if(strcmp(var, "HOME") == true) {
+		printf("%s\n", "Cannot unset HOME environment variable");
+	} 
+	else if (strcmp(var, "PATH") == true) {
+		printf("%s\n", "Cannot unset PATH environment variable");
+	}
+	else {
+		unsetenv(var);
+	}
 	return 0;
 }
 
@@ -146,8 +159,45 @@ int runUnalias(char *name){
 
 int runPrintAlias() {
 	for(int i = 0; i < aliasIndex; i++) {
-		printf("%s"" ",aliasTable.name[i]);
+		printf("%s", aliasTable.name[i]);
+		printf("%s", "=");
 		printf("%s\n",aliasTable.word[i]);
+	}
+	return 0;
+}
+
+char** splitPath() {
+	int count = 0;
+	int i = 0;
+	for(i = 0; i < varIndex; i++){
+		if(strcmp(varTable.var[i], "PATH") == true) {
+			char *token = strtok(varTable.word[i], ":");
+			while( token != NULL ) {
+				count++;
+   			}
+			break;
+		}
+	}
+	char** split = malloc(sizeof(int)*count);;
+	char *token = strtok(varTable.word[i], ":");
+	while( token != NULL ) {
+		split[i] = token;
+	}
+	return split;
+}
+
+int runCMD(char *command) {
+	printf("in cmd function");
+	char** path = splitPath();
+	if(strcmp(command, "pwd") == true) {
+		printf("cmd is pwd");
+		for(int i = 0; i < varIndex; i++) {
+			if(strcmp(varTable.var[i], "PWD") == true) {
+				printf("found variable");
+				printf("%s\n",varTable.word[i]);
+				break;
+			}
+		}
 	}
 	return 0;
 }

@@ -47,7 +47,8 @@ alias		        { return ALIAS; }
 unalias             { return UNALIAS; }
 setenv              { return SETENV; }
 unsetenv            { return UNSETENV; }
-printenv            { return PRINTENV;}
+printenv            { return PRINTENV; }
+pwd                 { return CMD; }
 {CHAR}+              {if(ifAlias(yytext)) {
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
