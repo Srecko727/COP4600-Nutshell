@@ -1664,9 +1664,9 @@ int runUnsetenv(char *var)
 }
 
 int runSetAlias(char *name, char *word) {
-	if(name == NULL && word == NULL){
+	if((name != NULL) && (name[0] == '\0')){
 		for(int i = 0; i < aliasIndex; i++){
-			printf("%s"" ",aliasTable.name[i]);
+			printf("%s",aliasTable.name[i]);
 			printf("%s\n",aliasTable.word[i]);
 		}
 	}
@@ -1696,7 +1696,7 @@ int runUnalias(char *name){
     int position = 0;
     bool remove = false;
     for(int i = 0; i < aliasIndex-1; i++) {
-        if(aliasTable.name[i] == name) {
+        if(strcmp(aliasTable.name[i], name) == true) {
             remove = true;
         }
         if(remove == true){
