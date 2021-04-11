@@ -107,11 +107,10 @@ int runPrintenv()
 
 int runUnsetenv(char *var)
 {
-	printf("%s", var);
-	if(strcmp(var, "HOME") == true) {
+	if(strcmp(var, "HOME") == 0) {
 		printf("%s\n", "Cannot unset HOME environment variable");
 	} 
-	else if (strcmp(var, "PATH") == true) {
+	else if (strcmp(var, "PATH") == 0) {
 		printf("%s\n", "Cannot unset PATH environment variable");
 	}
 	else {
