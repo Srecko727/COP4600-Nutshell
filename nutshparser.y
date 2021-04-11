@@ -15,6 +15,7 @@ int yyerror(char *s);
 int runCD(char* arg);
 int runSetAlias(char *name, char *word);
 int runUnalias(char *name);
+int runPrintAlias();
 int runSetenv(char *var,char *word);
 int runUnsetenv(char *var);
 int runPrintenv();
@@ -34,6 +35,7 @@ cmd_line    :
 	| UNSETENV STRING END			{runUnsetenv($2); return 1;}
 
 	| CD STRING END        			{runCD($2); return 1;}
+	| ALIAS END						{runPrintAlias(1); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| UNALIAS STRING END			{runUnalias($2); return 1;}
 
@@ -106,13 +108,6 @@ int runUnsetenv(char *var)
 }
 
 int runSetAlias(char *name, char *word) {
-	if((name != NULL) && (name[0] == '\0')){
-		for(int i = 0; i < aliasIndex; i++){
-			printf("%s"" ",aliasTable.name[i]);
-			printf("%s\n",aliasTable.word[i]);
-		}
-	}
-	
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(name, word) == 0){
 			printf("Error, expansion of \"%s\" would create a loop.\n", name);
@@ -147,4 +142,12 @@ int runUnalias(char *name){
     }
     aliasIndex--;
     return 0;
+}
+
+int runPrintAlias() {
+	for(int i = 0; i < aliasIndex; i++) {
+		printf("%s"" ",aliasTable.name[i]);
+		printf("%s\n",aliasTable.word[i]);
+	}
+	return 0;
 }
