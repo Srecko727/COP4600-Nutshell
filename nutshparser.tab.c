@@ -117,8 +117,9 @@ int runSetenv(char *var,char *word);
 int runUnsetenv(char *var);
 int runPrintenv();
 int runPathCount(char *path);
-int runCMD(char *command);
+int runCMD();
 char** splitPath();
+char** splitString(char* str);
 
 
 /* Enabling traces.  */
@@ -141,10 +142,10 @@ char** splitPath();
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 27 "nutshparser.y"
+#line 28 "nutshparser.y"
 {char *string;}
 /* Line 193 of yacc.c.  */
-#line 148 "nutshparser.tab.c"
+#line 149 "nutshparser.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -157,7 +158,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 161 "nutshparser.tab.c"
+#line 162 "nutshparser.tab.c"
 
 #ifdef short
 # undef short
@@ -372,7 +373,7 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  19
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   28
+#define YYLAST   26
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  13
@@ -381,7 +382,7 @@ union yyalloc
 /* YYNRULES -- Number of rules.  */
 #define YYNRULES  10
 /* YYNRULES -- Number of states.  */
-#define YYNSTATES  28
+#define YYNSTATES  27
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
@@ -437,14 +438,14 @@ static const yytype_int8 yyrhs[] =
       14,     0,    -1,     3,    12,    -1,     5,     8,     8,    12,
       -1,     6,    12,    -1,     7,     8,    12,    -1,     4,     8,
       12,    -1,     9,    12,    -1,     9,     8,     8,    12,    -1,
-      10,     8,    12,    -1,    11,     8,    12,    -1
+      10,     8,    12,    -1,    11,    12,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    34,    34,    36,    37,    38,    40,    41,    42,    43,
-      44
+       0,    35,    35,    37,    38,    39,    41,    42,    43,    44,
+      45
 };
 #endif
 
@@ -480,7 +481,7 @@ static const yytype_uint8 yyr1[] =
 static const yytype_uint8 yyr2[] =
 {
        0,     2,     2,     4,     2,     3,     3,     2,     4,     3,
-       3
+       2
 };
 
 /* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
@@ -489,8 +490,8 @@ static const yytype_uint8 yyr2[] =
 static const yytype_uint8 yydefact[] =
 {
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       2,     0,     0,     4,     0,     0,     7,     0,     0,     1,
-       6,     0,     5,     0,     9,    10,     3,     8
+       2,     0,     0,     4,     0,     0,     7,     0,    10,     1,
+       6,     0,     5,     0,     9,     3,     8
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
@@ -504,9 +505,9 @@ static const yytype_int8 yydefgoto[] =
 #define YYPACT_NINF -8
 static const yytype_int8 yypact[] =
 {
-      -3,    -7,     2,     3,     0,     6,     1,     7,     8,    17,
-      -8,     9,    10,    -8,    11,    12,    -8,    13,    14,    -8,
-      -8,    15,    -8,    16,    -8,    -8,    -8,    -8
+      -3,    -7,     2,     3,     0,     6,     1,     7,     4,    17,
+      -8,     8,    10,    -8,     9,    11,    -8,    12,    -8,    -8,
+      -8,    13,    -8,    14,    -8,    -8,    -8
 };
 
 /* YYPGOTO[NTERM-NUM].  */
@@ -523,15 +524,15 @@ static const yytype_int8 yypgoto[] =
 static const yytype_uint8 yytable[] =
 {
        1,     2,     3,     4,     5,    10,     6,     7,     8,    15,
-      11,    12,    13,    16,    14,    17,    18,    19,    21,     0,
-      23,    20,     0,    22,     0,    24,    25,    26,    27
+      11,    12,    13,    16,    14,    17,    18,    19,    21,    23,
+      20,    22,     0,     0,    24,    25,    26
 };
 
 static const yytype_int8 yycheck[] =
 {
        3,     4,     5,     6,     7,    12,     9,    10,    11,     8,
-       8,     8,    12,    12,     8,     8,     8,     0,     8,    -1,
-       8,    12,    -1,    12,    -1,    12,    12,    12,    12
+       8,     8,    12,    12,     8,     8,    12,     0,     8,     8,
+      12,    12,    -1,    -1,    12,    12,    12
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -539,8 +540,8 @@ static const yytype_int8 yycheck[] =
 static const yytype_uint8 yystos[] =
 {
        0,     3,     4,     5,     6,     7,     9,    10,    11,    14,
-      12,     8,     8,    12,     8,     8,    12,     8,     8,     0,
-      12,     8,    12,     8,    12,    12,    12,    12
+      12,     8,     8,    12,     8,     8,    12,     8,    12,     0,
+      12,     8,    12,     8,    12,    12,    12
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1355,53 +1356,53 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 34 "nutshparser.y"
+#line 35 "nutshparser.y"
     {exit(1); return 1; ;}
     break;
 
   case 3:
-#line 36 "nutshparser.y"
+#line 37 "nutshparser.y"
     {runSetenv((yyvsp[(2) - (4)].string),(yyvsp[(3) - (4)].string)); return 1;;}
     break;
 
   case 4:
-#line 37 "nutshparser.y"
+#line 38 "nutshparser.y"
     {runPrintenv(1); return 1;;}
     break;
 
   case 5:
-#line 38 "nutshparser.y"
+#line 39 "nutshparser.y"
     {runUnsetenv((yyvsp[(2) - (3)].string)); return 1;;}
     break;
 
   case 6:
-#line 40 "nutshparser.y"
+#line 41 "nutshparser.y"
     {runCD((yyvsp[(2) - (3)].string)); return 1;;}
     break;
 
   case 7:
-#line 41 "nutshparser.y"
+#line 42 "nutshparser.y"
     {runPrintAlias(1); return 1;;}
     break;
 
   case 8:
-#line 42 "nutshparser.y"
+#line 43 "nutshparser.y"
     {runSetAlias((yyvsp[(2) - (4)].string), (yyvsp[(3) - (4)].string)); return 1;;}
     break;
 
   case 9:
-#line 43 "nutshparser.y"
+#line 44 "nutshparser.y"
     {runUnalias((yyvsp[(2) - (3)].string)); return 1;;}
     break;
 
   case 10:
-#line 44 "nutshparser.y"
-    {runCMD((yyvsp[(2) - (3)].string)); return 1;;}
+#line 45 "nutshparser.y"
+    {runCMD(1); return 1;;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1405 "nutshparser.tab.c"
+#line 1406 "nutshparser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1615,7 +1616,7 @@ yyreturn:
 }
 
 
-#line 46 "nutshparser.y"
+#line 47 "nutshparser.y"
 
 
 int yyerror(char *s) {
@@ -1681,10 +1682,10 @@ int runPrintenv()
 int runUnsetenv(char *var)
 {
 	printf("%s", var);
-	if(strcmp(var, 'HOME') == true) {
+	if(strcmp(var, "HOME") == 0) {
 		printf("%s\n", "Cannot unset HOME environment variable");
 	} 
-	else if (strcmp(var, 'PATH') == true) {
+	else if (strcmp(var, "PATH") == 0) {
 		printf("%s\n", "Cannot unset PATH environment variable");
 	}
 	else {
@@ -1759,18 +1760,65 @@ char** splitPath() {
 	return split;
 }
 
-int runCMD(char *command) {
-	printf("in cmd function");
+char** splitString(char* str){
+	int max_index = sizeof(*str)/sizeof(str[0]);
+	int count = 0;
+	char *token = strtok(str, " ");
+	while( token != NULL ) {
+		count++;
+		token = strtok(NULL, str);
+	}		
+	
+	char** split = malloc(sizeof(int)*count);
+	char *array_token = strtok(str, " ");
+	int i = 0;
+	while( array_token != NULL ) {
+		split[i] = array_token;
+		i++;
+		array_token = strtok(NULL, str);
+	}
+	return split;
+}
+
+int runCMD() {
+	char* input = yylval.string;
+	char* command = strtok(input, " ");
 	char** path = splitPath();
-	if(strcmp(command, "pwd") == true) {
-		printf("cmd is pwd");
+	if(strcmp(command, "pwd") == 0) {
 		for(int i = 0; i < varIndex; i++) {
-			if(strcmp(varTable.var[i], "PWD") == true) {
-				printf("found variable");
+			if(strcmp(varTable.var[i], "PWD") == 0) {
 				printf("%s\n",varTable.word[i]);
 				break;
 			}
 		}
+	}
+	else if(strcmp(command, "echo") == 0) {
+		char** tokens = splitString(input);
+		int num_tokens = sizeof(tokens)/sizeof(tokens[0]);
+
+		char** echo_strings = malloc(sizeof(int)*num_tokens);
+		int index_counter = 0;
+		bool isQuote = false;
+		for(int i = 0; i < num_tokens; i++){
+			if(isQuote == true){
+				if(strcmp(tokens[i], "\"") == 0) {
+					isQuote = false;
+					break;
+				}
+				echo_strings[index_counter] = *(tokens[i]);
+				index_counter++;
+			}
+			else if(strcmp(tokens[i], "\"") == 0) {
+				isQuote = true;
+			}
+		}
+
+		char final_str[100];
+		for(int i = 0; i < index_counter; i++){
+			//this doesn't work
+			strcat(final_str, echo_strings[i]);
+		}
+		printf("%s\n", final_str);
 	}
 	return 0;
 }

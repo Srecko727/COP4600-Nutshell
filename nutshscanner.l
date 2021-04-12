@@ -29,8 +29,9 @@ bool ifAlias(char* name){
 %array
 %option noyywrap
 
-CHAR            [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
-ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
+CHAR                [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
+ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
+NONBUILTIN          [(pwd)(ls)(echo)][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -"]*
 
 %x string_condition
 %%
@@ -48,7 +49,7 @@ unalias             { return UNALIAS; }
 setenv              { return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
-pwd                 { return CMD; }
+{NONBUILTIN}+        { yylval.string = strdup(yytext); return CMD; }
 {CHAR}+              {if(ifAlias(yytext)) {
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html

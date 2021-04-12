@@ -20,8 +20,9 @@ int runSetenv(char *var,char *word);
 int runUnsetenv(char *var);
 int runPrintenv();
 int runPathCount(char *path);
-int runCMD(char *command);
+int runCMD();
 char** splitPath();
+char** splitString(char* str);
 %}
 
 %union {char *string;}
@@ -41,7 +42,7 @@ cmd_line    :
 	| ALIAS END						{runPrintAlias(1); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| UNALIAS STRING END			{runUnalias($2); return 1;}
-	| CMD STRING END				{runCMD($2); return 1;}
+	| CMD END						{runCMD(1); return 1;}
 
 %%
 
@@ -108,10 +109,10 @@ int runPrintenv()
 int runUnsetenv(char *var)
 {
 	printf("%s", var);
-	if(strcmp(var, "HOME") == true) {
+	if(strcmp(var, "HOME") == 0) {
 		printf("%s\n", "Cannot unset HOME environment variable");
 	} 
-	else if (strcmp(var, "PATH") == true) {
+	else if (strcmp(var, "PATH") == 0) {
 		printf("%s\n", "Cannot unset PATH environment variable");
 	}
 	else {
@@ -186,18 +187,65 @@ char** splitPath() {
 	return split;
 }
 
-int runCMD(char *command) {
-	printf("in cmd function");
+char** splitString(char* str){
+	int max_index = sizeof(*str)/sizeof(str[0]);
+	int count = 0;
+	char *token = strtok(str, " ");
+	while( token != NULL ) {
+		count++;
+		token = strtok(NULL, str);
+	}		
+	
+	char** split = malloc(sizeof(int)*count);
+	char *array_token = strtok(str, " ");
+	int i = 0;
+	while( array_token != NULL ) {
+		split[i] = array_token;
+		i++;
+		array_token = strtok(NULL, str);
+	}
+	return split;
+}
+
+int runCMD() {
+	char* input = yylval.string;
+	char* command = strtok(input, " ");
 	char** path = splitPath();
-	if(strcmp(command, "pwd") == true) {
-		printf("cmd is pwd");
+	if(strcmp(command, "pwd") == 0) {
 		for(int i = 0; i < varIndex; i++) {
-			if(strcmp(varTable.var[i], "PWD") == true) {
-				printf("found variable");
+			if(strcmp(varTable.var[i], "PWD") == 0) {
 				printf("%s\n",varTable.word[i]);
 				break;
 			}
 		}
+	}
+	else if(strcmp(command, "echo") == 0) {
+		char** tokens = splitString(input);
+		int num_tokens = sizeof(tokens)/sizeof(tokens[0]);
+
+		char** echo_strings = malloc(sizeof(int)*num_tokens);
+		int index_counter = 0;
+		bool isQuote = false;
+		for(int i = 0; i < num_tokens; i++){
+			if(isQuote == true){
+				if(strcmp(tokens[i], "\"") == 0) {
+					isQuote = false;
+					break;
+				}
+				echo_strings[index_counter] = *(tokens[i]);
+				index_counter++;
+			}
+			else if(strcmp(tokens[i], "\"") == 0) {
+				isQuote = true;
+			}
+		}
+
+		char final_str[100];
+		for(int i = 0; i < index_counter; i++){
+			//this doesn't work
+			strcat(final_str, echo_strings[i]);
+		}
+		printf("%s\n", final_str);
 	}
 	return 0;
 }
