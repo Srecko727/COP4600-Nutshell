@@ -30,8 +30,8 @@ bool ifAlias(char* name){
 %option noyywrap
 
 CHAR                [\:.A-Za-z0-9!\/_-]+
-ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ - ]+
-NONBUILTIN          [a-zA-Z]+
+ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~-]+
+NONBUILTIN          [a-zA-Z><.]+
 
 
 %x string_condition
@@ -52,7 +52,7 @@ printenv            { return PRINTENV; }
 {NONBUILTIN}+       { yylval.string = strdup(yytext); return CMD; }
 {CHAR}+              {if(ifAlias(yytext)) {
                         printf("yytext before sub: %s\n", yytext);
-                        // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
+    // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                            char *yycopy = strdup( subAliases(yytext) );
                            for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
                                unput( yycopy[i] );
@@ -63,4 +63,5 @@ printenv            { return PRINTENV; }
                         return STRING;
                     };
                      }
+
 %%
