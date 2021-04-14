@@ -9,6 +9,7 @@
 #include "global.h"
 #include <dirent.h>
 #include <stdbool.h>
+#include <sys/stat.h>
 
 int yylex();
 int yyerror(char *s);
@@ -21,11 +22,13 @@ int runUnsetenv(char *var);
 int runPrintenv();
 int runPathCount(char *path);
 int runCMD();
-char** splitPath();
-char** splitString(char* str);
+char** splitPath(char* to_split, char* delimiter, char **arr);
+char* change_spaces(char* str_input);
+char* revert_spaces(char* str_input);
 %}
 
 %union {char *string;}
+%union {char *quoted_arg; }
 
 %start cmd_line
 %token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS UNALIAS CMD END
@@ -91,8 +94,8 @@ int runCD(char* arg) {
 }
 
 int runSetenv(char *var,char *word)
-{
-	setenv(var,word,1);
+{	
+	setenv(var, word, 1);
 	return 0;
 }
 
@@ -110,10 +113,10 @@ int runUnsetenv(char *var)
 {
 	printf("%s", var);
 	if(strcmp(var, "HOME") == 0) {
-		printf("%s\n", "Cannot unset HOME environment variable");
+		printf("\n%s\n", "Cannot unset HOME environment variable");
 	} 
 	else if (strcmp(var, "PATH") == 0) {
-		printf("%s\n", "Cannot unset PATH environment variable");
+		printf("\n%s\n", "Cannot unset PATH environment variable");
 	}
 	else {
 		unsetenv(var);
@@ -167,85 +170,84 @@ int runPrintAlias() {
 	return 0;
 }
 
-char** splitPath() {
+char** splitPath(char* to_split, char* delimiter, char** arr) {
+	char* word = strtok(to_split, delimiter);
 	int count = 0;
-	int i = 0;
-	for(i = 0; i < varIndex; i++){
-		if(strcmp(varTable.var[i], "PATH") == true) {
-			char *token = strtok(varTable.word[i], ":");
-			while( token != NULL ) {
-				count++;
-   			}
-			break;
-		}
+	while(word != NULL) {
+		arr[count] = word;
+		word = strtok(NULL, delimiter);
+		count++;
 	}
-	char** split = malloc(sizeof(int)*count);;
-	char *token = strtok(varTable.word[i], ":");
-	while( token != NULL ) {
-		split[i] = token;
-	}
-	return split;
+	arr[count] = NULL;
+	return arr;
 }
 
-char** splitString(char* str){
-	int max_index = sizeof(*str)/sizeof(str[0]);
-	int count = 0;
-	char *token = strtok(str, " ");
-	while( token != NULL ) {
-		count++;
-		token = strtok(NULL, str);
-	}		
-	
-	char** split = malloc(sizeof(int)*count);
-	char *array_token = strtok(str, " ");
-	int i = 0;
-	while( array_token != NULL ) {
-		split[i] = array_token;
-		i++;
-		array_token = strtok(NULL, str);
+//these two handle quotations by changing spaces to @ so quotes don't get split up
+char* change_spaces(char* str_input){
+	int quote_indicator = -1;
+	int size = sizeof(str_input);
+	for(int i = 0; i < size; i++){
+		if(strcmp(&str_input[i], "\"") == 0){
+			quote_indicator *= -1;
+			strcpy(&str_input[i], "p");
+		}
+		else if(quote_indicator > 0){ //quote_indicator = 1 when the index is within quotations
+			if(strcmp(&str_input[i], " ") == 0){
+				strcpy(&str_input[i], "@");
+			}
+		}
 	}
-	return split;
+	return str_input;
+}
+
+char* revert_spaces(char* str_input){
+	int size = sizeof(str_input);
+	for(int i = 0; i < size; i++){
+		if(strcmp(&str_input[i], "@") == 0){
+			strcpy(&str_input[i], " ");
+		}
+	}
+	return str_input;
 }
 
 int runCMD() {
 	char* input = yylval.string;
-	char* command = strtok(input, " ");
-	char** path = splitPath();
-	if(strcmp(command, "pwd") == 0) {
-		for(int i = 0; i < varIndex; i++) {
-			if(strcmp(varTable.var[i], "PWD") == 0) {
-				printf("%s\n",varTable.word[i]);
-				break;
-			}
+	input = change_spaces(input);
+	char **tempArg = (char**)malloc(sizeof(char)*20);
+	tempArg = splitPath(input, " ", tempArg);
+
+	int tempSize = sizeof(tempArg)/sizeof(tempArg[0]);
+	
+	for(int i = 0; i < tempSize; i++){
+		tempArg[i] = revert_spaces(tempArg[i]);
+	}
+	
+	char **arr = (char**)malloc(sizeof(char)*500);
+	char* path = strdup(getenv("PATH"));
+	arr = splitPath(path, ":", arr);
+	char* p_str = (char*)malloc(sizeof(char)*100);
+
+	int size = sizeof(arr);
+	
+	for(int i = 0; i < size; i++){
+		strcpy(p_str, arr[i]);
+		//adding the command to the path string
+		strcat(p_str, "/");
+		strcat(p_str, tempArg[0]);
+		
+		if(access(p_str, X_OK) == 0){
+			tempArg[0] = p_str; //setting first argument to full path
+			break;
 		}
 	}
-	else if(strcmp(command, "echo") == 0) {
-		char** tokens = splitString(input);
-		int num_tokens = sizeof(tokens)/sizeof(tokens[0]);
-
-		char** echo_strings = malloc(sizeof(int)*num_tokens);
-		int index_counter = 0;
-		bool isQuote = false;
-		for(int i = 0; i < num_tokens; i++){
-			if(isQuote == true){
-				if(strcmp(tokens[i], "\"") == 0) {
-					isQuote = false;
-					break;
-				}
-				echo_strings[index_counter] = *(tokens[i]);
-				index_counter++;
-			}
-			else if(strcmp(tokens[i], "\"") == 0) {
-				isQuote = true;
-			}
-		}
-
-		char final_str[100];
-		for(int i = 0; i < index_counter; i++){
-			//this doesn't work
-			strcat(final_str, echo_strings[i]);
-		}
-		printf("%s\n", final_str);
+	int pid = fork();
+	if(pid == 0){ //child
+		execv(p_str, tempArg);
+		exit(0);
 	}
+	else if (pid > 0){ //parent
+		wait(0);
+	}
+	
 	return 0;
 }
