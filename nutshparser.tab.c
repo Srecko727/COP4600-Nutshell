@@ -122,6 +122,7 @@ int runCMD();
 char** splitPath(char* to_split, char* delimiter, char **arr);
 char* change_spaces(char* str_input);
 char* revert_spaces(char* str_input);
+char* remove_quotes(char* str_input);
 
 
 /* Enabling traces.  */
@@ -144,12 +145,12 @@ char* revert_spaces(char* str_input);
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 30 "nutshparser.y"
-{char *string;
 #line 31 "nutshparser.y"
+{char *string;
+#line 32 "nutshparser.y"
 char *quoted_arg; }
 /* Line 193 of yacc.c.  */
-#line 153 "nutshparser.tab.c"
+#line 154 "nutshparser.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -162,7 +163,7 @@ char *quoted_arg; }
 
 
 /* Line 216 of yacc.c.  */
-#line 166 "nutshparser.tab.c"
+#line 167 "nutshparser.tab.c"
 
 #ifdef short
 # undef short
@@ -448,8 +449,8 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    38,    38,    40,    41,    42,    44,    45,    46,    47,
-      48
+       0,    39,    39,    41,    42,    43,    45,    46,    47,    48,
+      49
 };
 #endif
 
@@ -1360,53 +1361,53 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 38 "nutshparser.y"
+#line 39 "nutshparser.y"
     {exit(1); return 1; ;}
     break;
 
   case 3:
-#line 40 "nutshparser.y"
+#line 41 "nutshparser.y"
     {runSetenv((yyvsp[(2) - (4)].string),(yyvsp[(3) - (4)].string)); return 1;;}
     break;
 
   case 4:
-#line 41 "nutshparser.y"
+#line 42 "nutshparser.y"
     {runPrintenv(1); return 1;;}
     break;
 
   case 5:
-#line 42 "nutshparser.y"
+#line 43 "nutshparser.y"
     {runUnsetenv((yyvsp[(2) - (3)].string)); return 1;;}
     break;
 
   case 6:
-#line 44 "nutshparser.y"
+#line 45 "nutshparser.y"
     {runCD((yyvsp[(2) - (3)].string)); return 1;;}
     break;
 
   case 7:
-#line 45 "nutshparser.y"
+#line 46 "nutshparser.y"
     {runPrintAlias(1); return 1;;}
     break;
 
   case 8:
-#line 46 "nutshparser.y"
+#line 47 "nutshparser.y"
     {runSetAlias((yyvsp[(2) - (4)].string), (yyvsp[(3) - (4)].string)); return 1;;}
     break;
 
   case 9:
-#line 47 "nutshparser.y"
+#line 48 "nutshparser.y"
     {runUnalias((yyvsp[(2) - (3)].string)); return 1;;}
     break;
 
   case 10:
-#line 48 "nutshparser.y"
+#line 49 "nutshparser.y"
     {runCMD(1); return 1;;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1410 "nutshparser.tab.c"
+#line 1411 "nutshparser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1620,7 +1621,7 @@ yyreturn:
 }
 
 
-#line 50 "nutshparser.y"
+#line 51 "nutshparser.y"
 
 
 int yyerror(char *s) {
@@ -1763,7 +1764,6 @@ char* change_spaces(char* str_input){
 	for(int i = 0; i < size; i++){
 		if(strcmp(&str_input[i], "\"") == 0){
 			quote_indicator *= -1;
-			strcpy(&str_input[i], "8");
 		}
 		else if(quote_indicator > 0){ //quote_indicator = 1 when the index is within quotations
 			if(strcmp(&str_input[i], " ") == 0){
@@ -1771,6 +1771,7 @@ char* change_spaces(char* str_input){
 			}
 		}
 	}
+	
 	return str_input;
 }
 
@@ -1784,18 +1785,33 @@ char* revert_spaces(char* str_input){
 	return str_input;
 }
 
+char* remove_quotes(char* str_input){
+	int size = sizeof(str_input);
+	for(int i = 0; i < size; i++){
+		if(strcmp(&str_input[i], "\"") == 0){
+			strcpy(&str_input[i], "");
+		}
+	}
+	return str_input;
+}
+
 int runCMD() {
 	char* input = yylval.string;
-	input = change_spaces(input);
+	//input = change_spaces(input);
 	char **tempArg = (char**)malloc(sizeof(char)*20);
 	tempArg = splitPath(input, " ", tempArg);
-
+	
 	int tempSize = sizeof(tempArg)/sizeof(tempArg[0]);
 	
 	for(int i = 0; i < tempSize; i++){
-		tempArg[i] = revert_spaces(tempArg[i]);
+		printf("%s\n", tempArg[i]);	
 	}
 	
+	/*
+	for(int i = 0; i < tempSize; i++){
+		tempArg[i] = revert_spaces(tempArg[i]);
+	}
+	*/
 	char **arr = (char**)malloc(sizeof(char)*500);
 	char* path = strdup(getenv("PATH"));
 	arr = splitPath(path, ":", arr);

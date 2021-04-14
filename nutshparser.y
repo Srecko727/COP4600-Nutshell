@@ -25,6 +25,7 @@ int runCMD();
 char** splitPath(char* to_split, char* delimiter, char **arr);
 char* change_spaces(char* str_input);
 char* revert_spaces(char* str_input);
+char* remove_quotes(char* str_input);
 %}
 
 %union {char *string;}
@@ -189,7 +190,6 @@ char* change_spaces(char* str_input){
 	for(int i = 0; i < size; i++){
 		if(strcmp(&str_input[i], "\"") == 0){
 			quote_indicator *= -1;
-			strcpy(&str_input[i], "p");
 		}
 		else if(quote_indicator > 0){ //quote_indicator = 1 when the index is within quotations
 			if(strcmp(&str_input[i], " ") == 0){
@@ -197,6 +197,7 @@ char* change_spaces(char* str_input){
 			}
 		}
 	}
+	
 	return str_input;
 }
 
@@ -210,18 +211,33 @@ char* revert_spaces(char* str_input){
 	return str_input;
 }
 
+char* remove_quotes(char* str_input){
+	int size = sizeof(str_input);
+	for(int i = 0; i < size; i++){
+		if(strcmp(&str_input[i], "\"") == 0){
+			strcpy(&str_input[i], "");
+		}
+	}
+	return str_input;
+}
+
 int runCMD() {
 	char* input = yylval.string;
-	input = change_spaces(input);
+	//input = change_spaces(input);
 	char **tempArg = (char**)malloc(sizeof(char)*20);
 	tempArg = splitPath(input, " ", tempArg);
-
+	
 	int tempSize = sizeof(tempArg)/sizeof(tempArg[0]);
 	
 	for(int i = 0; i < tempSize; i++){
-		tempArg[i] = revert_spaces(tempArg[i]);
+		printf("%s\n", tempArg[i]);	
 	}
 	
+	/*
+	for(int i = 0; i < tempSize; i++){
+		tempArg[i] = revert_spaces(tempArg[i]);
+	}
+	*/
 	char **arr = (char**)malloc(sizeof(char)*500);
 	char* path = strdup(getenv("PATH"));
 	arr = splitPath(path, ":", arr);
