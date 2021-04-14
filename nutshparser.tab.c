@@ -123,6 +123,7 @@ char** splitPath(char* to_split, char* delimiter, char **arr);
 char* change_spaces(char* str_input);
 char* revert_spaces(char* str_input);
 char* remove_quotes(char* str_input);
+bool built_in;
 
 
 /* Enabling traces.  */
@@ -145,12 +146,10 @@ char* remove_quotes(char* str_input);
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 31 "nutshparser.y"
-{char *string;
 #line 32 "nutshparser.y"
-char *quoted_arg; }
+{char *string;}
 /* Line 193 of yacc.c.  */
-#line 154 "nutshparser.tab.c"
+#line 153 "nutshparser.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -163,7 +162,7 @@ char *quoted_arg; }
 
 
 /* Line 216 of yacc.c.  */
-#line 167 "nutshparser.tab.c"
+#line 166 "nutshparser.tab.c"
 
 #ifdef short
 # undef short
@@ -1407,7 +1406,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 1411 "nutshparser.tab.c"
+#line 1410 "nutshparser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);

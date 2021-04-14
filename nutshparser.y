@@ -26,10 +26,10 @@ char** splitPath(char* to_split, char* delimiter, char **arr);
 char* change_spaces(char* str_input);
 char* revert_spaces(char* str_input);
 char* remove_quotes(char* str_input);
+bool built_in;
 %}
 
 %union {char *string;}
-%union {char *quoted_arg; }
 
 %start cmd_line
 %token <string> BYE CD SETENV PRINTENV UNSETENV STRING ALIAS UNALIAS CMD END
