@@ -27,6 +27,37 @@ bool ifAlias(char* name){
     }
     return false;
 }
+char* expandENV(char* input, int len){
+    printf("input: %s\n", input);
+    char* varName = (char*)malloc(sizeof(char)*len);
+    bool varFound = false;
+    for(int i = 0; i < len; i++){
+        if(varFound == true){
+            if(input[i] == '}'){
+                break;
+            }
+            strncat(varName, &input[i], 1);
+        }
+        else if(input[i] == '{'){
+            varFound = true;
+        }
+    }
+    if(varFound == true){
+        printf("variable: %s\n", varName);
+        for(int i = 0; i < varIndex; i++){
+            printf("table_var: %s\n", varTable.var[i]);
+            if(strcmp(varTable.var[i], varName) == 0){
+                free(varName);
+                printf("word: %s\n", getenv(varTable.var[i]));
+                return getenv(varTable.var[i]);
+            }
+        }
+    }else{
+        free(varName);
+    }
+    return input;
+
+}
 %}
 %array
 %option noyywrap
@@ -34,6 +65,7 @@ bool ifAlias(char* name){
 CHAR                [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
 ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
 NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
+VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 
 %x string_condition
 %%
@@ -42,8 +74,9 @@ NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
 
+{VARSYMBOLS}        { yylval.string = strdup(expandENV(yytext, yyleng)); return STRING;}
 bye                 { return BYE; }
-cd		            { return CD;}
+cd		            { return CD; }
 alias		        { arg_count = 2; return ALIAS; }
 unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
