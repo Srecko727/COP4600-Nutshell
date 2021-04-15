@@ -81,7 +81,7 @@ char* expandENV(char* input, int len, bool inQuotes){
 CHAR                [:.A-Za-z0-9!\/_-][:.A-Za-z0-9!\/_-]*
 ANYCHAR             [:}{)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(:*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
 NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
-ARGSYMBOLS          [ .!\/_\"' -]
+ARGSYMBOLS          [ .!\/_\"' |-]
 VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 
 %x string_condition
@@ -117,7 +117,7 @@ unalias             { check_unalias = true; return UNALIAS; }
 setenv              { arg_count = 2; return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
-({NONBUILTIN}({ARGSYMBOLS}{CHAR})*)        { yylval.string = strdup(yytext); return CMD; }
+({NONBUILTIN}({ARGSYMBOLS}+{CHAR})*)        { yylval.string = strdup(yytext); return CMD; }
 {CHAR}+             {if(ifAlias(yytext) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html

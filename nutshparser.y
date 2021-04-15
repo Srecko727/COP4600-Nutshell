@@ -241,23 +241,47 @@ char* remove_quotes(char* str_input){
 
 int piping(char* sending, char* receiving)
 {
+	printf("sending: %s\n", "sending");
+	printf("receiving: %s\n", "receiving");
 	int ipipe[2],status;
 	pid_t one;
+
+	char **arr = (char**)malloc(sizeof(char)*500);
+	char* path = strdup(getenv("PATH"));
+	arr = split(path, ":", arr);
+	char* s_str = (char*)malloc(sizeof(char)*100);
+	char* r_str = (char*)malloc(sizeof(char)*100);
+
+	int size = sizeof(arr);
+	
+	for(int i = 0; i < size; i++){
+		strcpy(s_str, arr[i]);
+		strcpy(r_str, arr[i]);
+		//adding the command to the path string
+		strcat(s_str, "/");
+		strcat(r_str, "/");
+		strcat(s_str, arr[0]);
+		strcat(r_str, arr[0]);
+		
+		if(access(p_str, X_OK) == 0){
+			arr[0] = s_str; //setting first argument to full path
+			break;
+		}
+	}
+
 	one = fork();
 	if(one == 0)
 	{
-		printf("%s","sdf");
+		printf("%s\n","child");
 		dup2(ipipe[1],STDOUT_FILENO);
-		execlp(sending,sending,(char*)NULL);
+		execlp(arr[0],sending,(char*)NULL);
 	}
-
-	//one = fork();
-	if(one > 0)
+	else if(one > 0)
 	{
-		printf("%s","sdffds");
+		printf("%s\n","parent");
 		close(ipipe[1]);
 		dup2(ipipe[0],STDIN_FILENO);
-		execlp(receiving,receiving,(char*)NULL);
+		execlp(arr[0],receiving,(char*)NULL);
 	}
 	close(ipipe[0]);
 	close(ipipe[1]);
@@ -292,6 +316,7 @@ int runCMD() {
 	if (needsPipe == true)
 	{
 		piping(tempArg[s],tempArg[r]);
+		printf("%s\n", "piping exited");
 		free(tempArg);
 	}
 	else
