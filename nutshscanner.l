@@ -12,17 +12,19 @@
 bool check_unalias = false;
 int arg_count = 0;
 char *checked_input = "";
-char* subAliases(char* name){
+char* subAliases(char* name, int len){
+    char *first = strtok(name, " ");
     for (int i = 0; i < aliasIndex; i++) {
-        if(strcmp(aliasTable.name[i], name) == 0) {
+        if(strcmp(aliasTable.name[i], first) == 0) {
             return aliasTable.word[i];
         }
     }
     return name;
 }
-bool ifAlias(char* name){
+bool ifAlias(char* name, int len){
+    char *first = strtok(name, " ");
     for (int i = 0; i < aliasIndex; i++) {
-        if(strcmp(aliasTable.name[i], name) == 0) {
+        if(strcmp(aliasTable.name[i], first) == 0) {
             return true;
         }
     }
@@ -98,31 +100,30 @@ unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
 [\"]                { BEGIN(string_condition); }
 {VARSYMBOLS}        {   checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
-                        if(ifAlias(checked_input)) {
-                            char *yycopy = strdup( subAliases(checked_input) );
-                            for ( int i = strlen(subAliases(checked_input)) - 1; i >= 0; --i )
+                        if(ifAlias(checked_input, yyleng)) {
+                            char *yycopy = strdup( subAliases(checked_input, yyleng) );
+                            for ( int i = strlen(subAliases(checked_input, yyleng)) - 1; i >= 0; --i )
                                 unput( yycopy[i] );
                             free( yycopy );
-                    } else {
-                        printf("yytext: %s\n", yytext);
-                        yylval.string = checked_input;
-                        printf("returned: %s\n", yylval.string);
-                        check_unalias = false;
-                        if(arg_count > 0){
-                            arg_count--; //arg_count will be 1 after first one is checked
-                        }
-                        return STRING;
-                        };
+                        } else {
+                            printf("yytext: %s\n", yytext);
+                            yylval.string = checked_input;
+                            check_unalias = false;
+                            if(arg_count > 0){
+                                arg_count--; //arg_count will be 1 after first one is checked
+                            }
+                            return STRING;
+                            };
                         }
 setenv              { arg_count = 2; return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
 ({NONBUILTIN}({ARGSYMBOLS}{CHAR})*)        { yylval.string = strdup(yytext); return CMD; }
-{CHAR}+             {if(ifAlias(yytext) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
+{CHAR}+             {if(ifAlias(yytext, yyleng) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
-                           char *yycopy = strdup( subAliases(yytext) );
-                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
+                           char *yycopy = strdup( subAliases(yytext, yyleng) );
+                           for ( int i = strlen(subAliases(yytext, yyleng)) - 1; i >= 0; --i )
                                unput( yycopy[i] );
                            free( yycopy );
                     } else {
