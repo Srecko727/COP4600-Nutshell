@@ -27,6 +27,7 @@ char* change_spaces(char* str_input);
 char* revert_spaces(char* str_input);
 char* remove_quotes(char* str_input);
 bool built_in;
+int piping(char* sending, char* receiving);
 %}
 
 %union {char *string;}
@@ -223,47 +224,84 @@ char* remove_quotes(char* str_input){
 
 int runCMD() {
 	char* input = yylval.string;
-	//input = change_spaces(input);
-	char **tempArg = (char**)malloc(sizeof(char)*20);
+	char **tempArg = (char**)malloc(sizeof(char)*200);
 	tempArg = splitPath(input, " ", tempArg);
-	
-	int tempSize = sizeof(tempArg)/sizeof(tempArg[0]);
-	
-	for(int i = 0; i < tempSize; i++){
-		printf("%s\n", tempArg[i]);	
-	}
-	
-	/*
-	for(int i = 0; i < tempSize; i++){
-		tempArg[i] = revert_spaces(tempArg[i]);
-	}
-	*/
-	char **arr = (char**)malloc(sizeof(char)*500);
-	char* path = strdup(getenv("PATH"));
-	arr = splitPath(path, ":", arr);
-	char* p_str = (char*)malloc(sizeof(char)*100);
 
-	int size = sizeof(arr);
-	
-	for(int i = 0; i < size; i++){
-		strcpy(p_str, arr[i]);
-		//adding the command to the path string
-		strcat(p_str, "/");
-		strcat(p_str, tempArg[0]);
-		
-		if(access(p_str, X_OK) == 0){
-			tempArg[0] = p_str; //setting first argument to full path
-			break;
+	int tempSize = sizeof(tempArg)/sizeof(tempArg[0]);
+	bool tfPipe = false;
+	int s,r;
+
+	for(int i=0; i< tempSize-1;i++)
+	{
+		//printf("%s\n",tempArg[i]);
+		if (strcmp(tempArg[i],">") == 0)
+		{
+			printf("%s","sadfdsf");
+			tfPipe = true;
+			s = i-1;
+			r = i+1;
+			//printf("%s\n",tempArg[i-1]);
+			//printf("%s\n",tempArg[i+1]);
+			//piping(tempArg[i-1],tempArg[i+1]);
 		}
 	}
-	int pid = fork();
-	if(pid == 0){ //child
-		execv(p_str, tempArg);
-		exit(0);
+	if (tfPipe == true)
+	{
+		piping(tempArg[s],tempArg[r]);
 	}
-	else if (pid > 0){ //parent
-		wait(0);
+	else
+	{
+		char **arr = (char**)malloc(sizeof(char)*500);
+		char* path = strdup(getenv("PATH"));
+		arr = splitPath(path, ":", arr);
+		char* p_str = (char*)malloc(sizeof(char)*100);
+
+		int size = sizeof(arr);
+		
+		for(int i = 0; i < size; i++){
+			strcpy(p_str, arr[i]);
+			//adding the command to the path string
+			strcat(p_str, "/");
+			strcat(p_str, tempArg[0]);
+			
+			if(access(p_str, X_OK) == 0){
+				tempArg[0] = p_str; //setting first argument to full path
+				break;
+			}
+		}
+		int pid = fork();
+		if(pid == 0){ //child
+			execv(p_str, tempArg);
+			exit(0);
+		}
+		else if (pid > 0){ //parent
+			wait(0);
+		}
 	}
-	
 	return 0;
+}
+
+int piping(char* sending, char* receiving)
+{
+	int ipipe[2],status;
+	pid_t one;
+	one = fork();
+	if(one == 0)
+	{
+		dup2(ipipe[1],STDOUT_FILENO);
+		execlp(sending,sending,(char*)NULL);
+	}
+
+	one = fork();
+	if(one == 0)
+	{
+		close(ipipe[1]);
+		dup2(ipipe[0],STDIN_FILENO);
+		execlp(receiving,receiving,(char*)NULL);
+	}
+	close(ipipe[0]);
+	close(ipipe[1]);
+
+	waitpid(-1,&status,0);
+	waitpid(-1,&status,0);
 }

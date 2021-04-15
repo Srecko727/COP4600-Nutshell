@@ -39,7 +39,7 @@ NONBUILTIN          ls|pwd|cat|echo
 <string_condition>{ANYCHAR}+    { yylval.string = strdup(yytext); return STRING;}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
-[ ]                 {  }
+
 bye                 { return BYE; }
 cd		            { return CD;}
 alias		        { return ALIAS; }
