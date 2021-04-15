@@ -553,6 +553,7 @@ char *yytext_ptr;
 //#define unput(c) {yytchar= (c); if(yytchar=='\n') {yylineno--; *yysptr++=yytchar;}
 bool check_unalias = false;
 int arg_count = 0;
+char *checked_input = "";
 char* subAliases(char* name){
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], name) == 0) {
@@ -570,19 +571,22 @@ bool ifAlias(char* name){
     return false;
 }
 char* expandENV(char* input, int len, bool inQuotes){
-    printf("input: %s\n", input);
+    printf("len: %d\n", len);
     char* varName = (char*)malloc(sizeof(char)*len);
     char* output = (char*)malloc(sizeof(char)*len);
     bool varFound = false;
     int position = 0;
+    char open = '{';
+    char close = '}';
     for(int i = 0; i < len; i++){
         if(varFound == true){
-            if(input[i] == '}'){
+            if(input[i] == close){
                 break;
             }
             strncat(varName, &input[i], 1);
+            printf("new: %s\n", varName);
         }
-        else if(input[i] == '{'){
+        else if(input[i] == open){
             varFound = true;
             position = i - 1;
         }
@@ -593,34 +597,31 @@ char* expandENV(char* input, int len, bool inQuotes){
                 strncat(output, &input[i], 1);
             }
             for(int i = 0; i < varIndex; i++){
-                printf("table_var: %s\n", varTable.var[i]);
                 if(strcmp(varTable.var[i], varName) == 0){
                     free(varName);
-                    printf("word: %s\n", getenv(varTable.var[i]));
                     strcat(output, varTable.word[i]);
                     return output;
                 }
             }
             return input;
         } else {
-            printf("variable: %s\n", varName);
-            printf("num: %d\n", varIndex);
+            printf("varname: %s\n", varName);
             for(int i = 0; i < varIndex; i++){
-                printf("table_var: %s\n", varTable.var[i]);
+                printf("table: %s\n", varTable.var[i]);
                 if(strcmp(varTable.var[i], varName) == 0){
                     free(varName);
-                    printf("word: %s\n", getenv(varTable.var[i]));
-                    return varTable.word[i];
+                    return getenv(varTable.var[i]);
                 }
             }
         }
     }else{
         free(varName);
+        free(output);
     }
     return input;
 }
 
-#line 624 "lex.yy.c"
+#line 625 "lex.yy.c"
 
 #define INITIAL 0
 #define string_condition 1
@@ -803,10 +804,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 91 "nutshscanner.l"
+#line 92 "nutshscanner.l"
 
 
-#line 810 "lex.yy.c"
+#line 811 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -891,75 +892,90 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 93 "nutshscanner.l"
-{ printf("%s\n", "quotes matching"); yylval.string = strdup(expandENV(yytext, yyleng, true)); arg_count--; return STRING;}
+#line 94 "nutshscanner.l"
+{yylval.string = strdup(expandENV(yytext, yyleng, true)); arg_count--; return STRING;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 94 "nutshscanner.l"
+#line 95 "nutshscanner.l"
 {BEGIN(INITIAL);}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 97 "nutshscanner.l"
+#line 98 "nutshscanner.l"
 { return BYE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 98 "nutshscanner.l"
-{ return CD; }
+#line 99 "nutshscanner.l"
+{ arg_count = 1; return CD; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 99 "nutshscanner.l"
+#line 100 "nutshscanner.l"
 { arg_count = 2; return ALIAS; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 100 "nutshscanner.l"
+#line 101 "nutshscanner.l"
 { check_unalias = true; return UNALIAS; }
 	YY_BREAK
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 101 "nutshscanner.l"
+#line 102 "nutshscanner.l"
 { return END; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 102 "nutshscanner.l"
+#line 103 "nutshscanner.l"
 { BEGIN(string_condition); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 103 "nutshscanner.l"
-{ yylval.string = strdup(expandENV(yytext, yyleng, false)); arg_count = 0; return STRING;}
+#line 104 "nutshscanner.l"
+{   checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
+                        if(ifAlias(checked_input)) {
+                            char *yycopy = strdup( subAliases(checked_input) );
+                            for ( int i = strlen(subAliases(checked_input)) - 1; i >= 0; --i )
+                                unput( yycopy[i] );
+                            free( yycopy );
+                    } else {
+                        printf("yytext: %s\n", yytext);
+                        yylval.string = checked_input;
+                        printf("returned: %s\n", yylval.string);
+                        check_unalias = false;
+                        if(arg_count > 0){
+                            arg_count--; //arg_count will be 1 after first one is checked
+                        }
+                        return STRING;
+                        };
+                        }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 104 "nutshscanner.l"
+#line 121 "nutshscanner.l"
 { arg_count = 2; return SETENV; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 105 "nutshscanner.l"
+#line 122 "nutshscanner.l"
 { return UNSETENV; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 106 "nutshscanner.l"
+#line 123 "nutshscanner.l"
 { return PRINTENV; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 107 "nutshscanner.l"
+#line 124 "nutshscanner.l"
 { yylval.string = strdup(yytext); return CMD; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 108 "nutshscanner.l"
+#line 125 "nutshscanner.l"
 {if(ifAlias(yytext) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
-                        //printf("%s\n", "why am i here");
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                            char *yycopy = strdup( subAliases(yytext) );
@@ -970,7 +986,6 @@ YY_RULE_SETUP
                         printf("yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
                         check_unalias = false;
-                        //printf("%d\n", arg_count);
                         if(arg_count > 0){
                             arg_count--; //arg_count will be 1 after first one is checked
                         }
@@ -980,10 +995,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 127 "nutshscanner.l"
+#line 142 "nutshscanner.l"
 ECHO;
 	YY_BREAK
-#line 987 "lex.yy.c"
+#line 1002 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(string_condition):
 	yyterminate();
@@ -1981,6 +1996,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 127 "nutshscanner.l"
+#line 142 "nutshscanner.l"
 
 
