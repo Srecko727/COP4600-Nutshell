@@ -65,6 +65,7 @@ char* expandENV(char* input, int len){
 CHAR                [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
 ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
 NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
+ARGSYMBOLS          [ .A-Za-z0-9!\/_\"' -]
 VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 
 %x string_condition
@@ -84,7 +85,7 @@ unalias             { check_unalias = true; return UNALIAS; }
 setenv              { return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
-({NONBUILTIN}{ANYCHAR}*)        { yylval.string = strdup(yytext); return CMD; }
+({NONBUILTIN}{ARGSYMBOLS}*)        { yylval.string = strdup(yytext); return CMD; }
 {CHAR}+             {if(ifAlias(yytext) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
                         //printf("%s\n", "why am i here");
                         printf("yytext before sub: %s\n", yytext);
