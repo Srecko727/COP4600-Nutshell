@@ -98,6 +98,9 @@ int runCD(char* arg) {
 int runSetenv(char *var,char *word)
 {	
 	setenv(var, word, 1);
+	strcpy(varTable.var[varIndex], var);
+	strcpy(varTable.word[varIndex], word);
+	varIndex++;
 	return 0;
 }
 
@@ -122,6 +125,19 @@ int runUnsetenv(char *var)
 	}
 	else {
 		unsetenv(var);
+
+		//modifying table as well
+		bool remove = false;
+		for(int i = 0; i < varIndex-1; i++) {
+			if(strcmp(varTable.var[i], var) == 0) {
+				remove = true;
+			}
+			if(remove == true){
+				strcpy(varTable.var[i], varTable.var[i+1]);
+				strcpy(varTable.word[i], varTable.word[i+1]);
+			}
+    	}
+    	varIndex--;
 	}
 	return 0;
 }

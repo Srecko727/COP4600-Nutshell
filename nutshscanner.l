@@ -27,10 +27,12 @@ bool ifAlias(char* name){
     }
     return false;
 }
-char* expandENV(char* input, int len){
+char* expandENV(char* input, int len, bool inQuotes){
     printf("input: %s\n", input);
     char* varName = (char*)malloc(sizeof(char)*len);
+    char* output = (char*)malloc(sizeof(char)*len);
     bool varFound = false;
+    int position = 0;
     for(int i = 0; i < len; i++){
         if(varFound == true){
             if(input[i] == '}'){
@@ -40,52 +42,69 @@ char* expandENV(char* input, int len){
         }
         else if(input[i] == '{'){
             varFound = true;
+            position = i - 1;
         }
     }
     if(varFound == true){
-        printf("variable: %s\n", varName);
-        for(int i = 0; i < varIndex; i++){
-            printf("table_var: %s\n", varTable.var[i]);
-            if(strcmp(varTable.var[i], varName) == 0){
-                free(varName);
-                printf("word: %s\n", getenv(varTable.var[i]));
-                return getenv(varTable.var[i]);
+        if(inQuotes == true){
+            for(int i = 0; i < position; i++){
+                strncat(output, &input[i], 1);
+            }
+            for(int i = 0; i < varIndex; i++){
+                printf("table_var: %s\n", varTable.var[i]);
+                if(strcmp(varTable.var[i], varName) == 0){
+                    free(varName);
+                    printf("word: %s\n", getenv(varTable.var[i]));
+                    strcat(output, varTable.word[i]);
+                    return output;
+                }
+            }
+            return input;
+        } else {
+            printf("variable: %s\n", varName);
+            printf("num: %d\n", varIndex);
+            for(int i = 0; i < varIndex; i++){
+                printf("table_var: %s\n", varTable.var[i]);
+                if(strcmp(varTable.var[i], varName) == 0){
+                    free(varName);
+                    printf("word: %s\n", getenv(varTable.var[i]));
+                    return varTable.word[i];
+                }
             }
         }
     }else{
         free(varName);
     }
     return input;
-
 }
 %}
 %array
 %option noyywrap
 
 CHAR                [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
-ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
+ANYCHAR             [}{)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
 NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
-ARGSYMBOLS          [ .A-Za-z0-9!\/_\"' -]
+ARGSYMBOLS          [ .!\/_\"' -]
 VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 
 %x string_condition
 %%
 
-<string_condition>{ANYCHAR}+     { yylval.string = strdup(yytext); arg_count--; return STRING;}
+<string_condition>{ANYCHAR}+    { printf("%s\n", "quotes matching"); yylval.string = strdup(expandENV(yytext, yyleng, true)); arg_count--; return STRING;}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
 
-{VARSYMBOLS}        { yylval.string = strdup(expandENV(yytext, yyleng)); return STRING;}
 bye                 { return BYE; }
 cd		            { return CD; }
 alias		        { arg_count = 2; return ALIAS; }
 unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
 [\"]                { BEGIN(string_condition); }
-setenv              { return SETENV; }
+{VARSYMBOLS}        { yylval.string = strdup(expandENV(yytext, yyleng, false)); arg_count = 0; return STRING;}
+setenv              { arg_count = 2; return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
-({NONBUILTIN}{ARGSYMBOLS}*)        { yylval.string = strdup(yytext); return CMD; }
+({NONBUILTIN}({ARGSYMBOLS}{CHAR})*)        { yylval.string = strdup(yytext); return CMD; }
 {CHAR}+             {if(ifAlias(yytext) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
                         //printf("%s\n", "why am i here");
                         printf("yytext before sub: %s\n", yytext);
