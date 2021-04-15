@@ -9,6 +9,8 @@
 #include <dirent.h>
 
 //#define unput(c) {yytchar= (c); if(yytchar=='\n') {yylineno--; *yysptr++=yytchar;}
+bool check_unalias = false;
+int arg_count = 0;
 char* subAliases(char* name){
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], name) == 0) {
@@ -29,38 +31,44 @@ bool ifAlias(char* name){
 %array
 %option noyywrap
 
-CHAR                [\:.A-Za-z0-9!\/_-]+
-ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ - \"><]+
-NONBUILTIN          ls|pwd|cat|echo
-
+CHAR                [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
+ANYCHAR             [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
+NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
 
 %x string_condition
-%%              
-<string_condition>{ANYCHAR}+    { yylval.string = strdup(yytext); return STRING;}
+%%
+
+<string_condition>{ANYCHAR}+     { yylval.string = strdup(yytext); arg_count--; return STRING;}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
 
 bye                 { return BYE; }
 cd		            { return CD;}
-alias		        { return ALIAS; }
+alias		        { arg_count = 2; return ALIAS; }
+unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
 [\"]                { BEGIN(string_condition); }
-unalias             { return UNALIAS; }
 setenv              { return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
 ({NONBUILTIN}{ANYCHAR}*)        { yylval.string = strdup(yytext); return CMD; }
-{CHAR}+              {if(ifAlias(yytext)) {
+{CHAR}+             {if(ifAlias(yytext) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
+                        //printf("%s\n", "why am i here");
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                            char *yycopy = strdup( subAliases(yytext) );
                            for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
                                unput( yycopy[i] );
                            free( yycopy );
-                    }else{
+                    } else {
                         printf("yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
+                        check_unalias = false;
+                        //printf("%d\n", arg_count);
+                        if(arg_count > 0){
+                            arg_count--; //arg_count will be 1 after first one is checked
+                        }
                         return STRING;
-                    };
-                     }
+                        };
+                    }
 %%

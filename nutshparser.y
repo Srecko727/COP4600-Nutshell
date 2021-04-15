@@ -22,7 +22,7 @@ int runUnsetenv(char *var);
 int runPrintenv();
 int runPathCount(char *path);
 int runCMD();
-char** splitPath(char* to_split, char* delimiter, char **arr);
+char** split(char* to_split, char* delimiter, char **arr);
 char* change_spaces(char* str_input);
 char* revert_spaces(char* str_input);
 char* remove_quotes(char* str_input);
@@ -149,14 +149,14 @@ int runSetAlias(char *name, char *word) {
 }
 
 int runUnalias(char *name){
-    int position = 0;
     bool remove = false;
     for(int i = 0; i < aliasIndex-1; i++) {
-        if(strcmp(aliasTable.name[i], name) == true) {
+        if(strcmp(aliasTable.name[i], name) == 0) {
             remove = true;
         }
         if(remove == true){
             strcpy(aliasTable.name[i], aliasTable.name[i+1]);
+			strcpy(aliasTable.word[i], aliasTable.word[i+1]);
         }
     }
     aliasIndex--;
@@ -172,7 +172,7 @@ int runPrintAlias() {
 	return 0;
 }
 
-char** splitPath(char* to_split, char* delimiter, char** arr) {
+char** split(char* to_split, char* delimiter, char** arr) {
 	char* word = strtok(to_split, delimiter);
 	int count = 0;
 	while(word != NULL) {
@@ -222,30 +222,56 @@ char* remove_quotes(char* str_input){
 	return str_input;
 }
 
+
+int piping(char* sending, char* receiving)
+{
+	int ipipe[2],status;
+	pid_t one;
+	one = fork();
+	if(one == 0)
+	{
+		dup2(ipipe[1],STDOUT_FILENO);
+		execlp(sending,sending,(char*)NULL);
+	}
+
+	one = fork();
+	if(one == 0)
+	{
+		close(ipipe[1]);
+		dup2(ipipe[0],STDIN_FILENO);
+		execlp(receiving,receiving,(char*)NULL);
+	}
+	close(ipipe[0]);
+	close(ipipe[1]);
+
+	waitpid(-1,&status,0);
+	waitpid(-1,&status,0);
+	return 0;
+}
+
 int runCMD() {
 	char* input = yylval.string;
-	char **tempArg = (char**)malloc(sizeof(char)*200);
-	tempArg = splitPath(input, " ", tempArg);
+	char **tempArg = (char**)malloc(sizeof(char)*20);
+	tempArg = split(input, " ", tempArg);
 
-	int tempSize = sizeof(tempArg)/sizeof(tempArg[0]);
-	bool tfPipe = false;
-	int s,r;
-
-	for(int i=0; i< tempSize-1;i++)
+	bool needsPipe = false;
+	int s, r, index = 0;
+	while(tempArg[index] != NULL)
 	{
-		//printf("%s\n",tempArg[i]);
-		if (strcmp(tempArg[i],">") == 0)
-		{
-			printf("%s","sadfdsf");
-			tfPipe = true;
-			s = i-1;
-			r = i+1;
-			//printf("%s\n",tempArg[i-1]);
-			//printf("%s\n",tempArg[i+1]);
-			//piping(tempArg[i-1],tempArg[i+1]);
+		//printf("%s\n",tempArg[index]);
+		if (strcmp(tempArg[index],">") == 0){
+			needsPipe = true;
+			s = index+1;
+			r = index-1;
 		}
+		else if(strcmp(tempArg[index],"|") == 0){
+			needsPipe = true;
+			s = index - 1;
+			r = index + 1; 
+		}
+		index++;
 	}
-	if (tfPipe == true)
+	if (needsPipe == true)
 	{
 		piping(tempArg[s],tempArg[r]);
 	}
@@ -253,7 +279,7 @@ int runCMD() {
 	{
 		char **arr = (char**)malloc(sizeof(char)*500);
 		char* path = strdup(getenv("PATH"));
-		arr = splitPath(path, ":", arr);
+		arr = split(path, ":", arr);
 		char* p_str = (char*)malloc(sizeof(char)*100);
 
 		int size = sizeof(arr);
@@ -279,29 +305,4 @@ int runCMD() {
 		}
 	}
 	return 0;
-}
-
-int piping(char* sending, char* receiving)
-{
-	int ipipe[2],status;
-	pid_t one;
-	one = fork();
-	if(one == 0)
-	{
-		dup2(ipipe[1],STDOUT_FILENO);
-		execlp(sending,sending,(char*)NULL);
-	}
-
-	one = fork();
-	if(one == 0)
-	{
-		close(ipipe[1]);
-		dup2(ipipe[0],STDIN_FILENO);
-		execlp(receiving,receiving,(char*)NULL);
-	}
-	close(ipipe[0]);
-	close(ipipe[1]);
-
-	waitpid(-1,&status,0);
-	waitpid(-1,&status,0);
 }
