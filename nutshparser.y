@@ -230,13 +230,15 @@ int piping(char* sending, char* receiving)
 	one = fork();
 	if(one == 0)
 	{
+		printf("%s","sdf");
 		dup2(ipipe[1],STDOUT_FILENO);
 		execlp(sending,sending,(char*)NULL);
 	}
 
-	one = fork();
-	if(one == 0)
+	//one = fork();
+	if(one > 0)
 	{
+		printf("%s","sdffds");
 		close(ipipe[1]);
 		dup2(ipipe[0],STDIN_FILENO);
 		execlp(receiving,receiving,(char*)NULL);
@@ -244,14 +246,14 @@ int piping(char* sending, char* receiving)
 	close(ipipe[0]);
 	close(ipipe[1]);
 
-	waitpid(-1,&status,0);
+	//waitpid(-1,&status,0);
 	waitpid(-1,&status,0);
 	return 0;
 }
 
 int runCMD() {
 	char* input = yylval.string;
-	char **tempArg = (char**)malloc(sizeof(char)*20);
+	char **tempArg = (char**)malloc(sizeof(char)*200);
 	tempArg = split(input, " ", tempArg);
 
 	bool needsPipe = false;
@@ -274,6 +276,7 @@ int runCMD() {
 	if (needsPipe == true)
 	{
 		piping(tempArg[s],tempArg[r]);
+		free(tempArg);
 	}
 	else
 	{
@@ -303,6 +306,7 @@ int runCMD() {
 		else if (pid > 0){ //parent
 			wait(0);
 		}
+		free(tempArg);
 	}
 	return 0;
 }
