@@ -27,7 +27,7 @@ char* change_spaces(char* str_input);
 char* revert_spaces(char* str_input);
 char* remove_quotes(char* str_input);
 bool built_in;
-int piping(char* sending, char* receiving);
+int piping(char** pipes);
 %}
 
 %union {char *string;}
@@ -97,10 +97,19 @@ int runCD(char* arg) {
 
 int runSetenv(char *var,char *word)
 {	
+	bool exists = false;
+	for(int i = 0; i < varIndex; i++){
+		if(strcmp(varTable.var[i], var) == 0){
+			exists = true;
+			strcpy(varTable.word[i], word);
+		}
+	}
+	if(exists == false){
+		strcpy(varTable.var[varIndex], var);
+		strcpy(varTable.word[varIndex], word);
+		varIndex++;
+	}
 	setenv(var, word, 1);
-	strcpy(varTable.var[varIndex], var);
-	strcpy(varTable.word[varIndex], word);
-	varIndex++;
 	return 0;
 }
 
@@ -203,68 +212,72 @@ char** split(char* to_split, char* delimiter, char** arr) {
 	return arr;
 }
 
-//these two handle quotations by changing spaces to @ so quotes don't get split up
-char* change_spaces(char* str_input){
-	int quote_indicator = -1;
-	int size = sizeof(str_input);
-	for(int i = 0; i < size; i++){
-		if(strcmp(&str_input[i], "\"") == 0){
-			quote_indicator *= -1;
-		}
-		else if(quote_indicator > 0){ //quote_indicator = 1 when the index is within quotations
-			if(strcmp(&str_input[i], " ") == 0){
-				strcpy(&str_input[i], "@");
+
+int piping(char **pipes)
+{
+	char* sending;
+	char* receiving;
+	int index = 1;
+	while(pipes[index] != NULL){
+		sending = pipes[index-1];
+		receiving = pipes[index];
+	
+		printf("sending: %s\n", "sending");
+		printf("receiving: %s\n", "receiving");
+		int ipipe[2],status;
+		pid_t one;
+		char **arr = (char**)malloc(sizeof(char)*500);
+		char* path = strdup(getenv("PATH"));
+		arr = split(path, ":", arr);
+		char* s_str = (char*)malloc(sizeof(char)*100);
+		char* r_str = (char*)malloc(sizeof(char)*100);
+		char *sendPath;
+		char *receivePath;
+		int size = sizeof(arr);
+		
+		for(int i = 0; i < size; i++){
+			strcpy(s_str, arr[i]);
+			strcpy(r_str, arr[i]);
+			//adding the command to the path string
+			strcat(s_str, "/");
+			strcat(r_str, "/");
+			strcat(s_str, sending);
+			strcat(r_str, receiving);
+			
+			if(access(s_str, X_OK) == 0){
+				sendPath = s_str; //setting first argument to full path
+				break;
+			}
+			if(access(r_str, X_OK) == 0){
+				receivePath = r_str;
+				break;
 			}
 		}
-	}
-	
-	return str_input;
-}
-
-char* revert_spaces(char* str_input){
-	int size = sizeof(str_input);
-	for(int i = 0; i < size; i++){
-		if(strcmp(&str_input[i], "@") == 0){
-			strcpy(&str_input[i], " ");
+		one = fork();
+		if(one == 0)
+		{
+			close(ipipe[0]);
+			printf("%s\n","child");
+			dup2(ipipe[1],STDOUT_FILENO);
+			execlp(arr[0],sending,(char*)NULL);
+			printf("%s\n","child done");
 		}
-	}
-	return str_input;
-}
-
-char* remove_quotes(char* str_input){
-	int size = sizeof(str_input);
-	for(int i = 0; i < size; i++){
-		if(strcmp(&str_input[i], "\"") == 0){
-			strcpy(&str_input[i], "");
+		
+		if(one > 0)
+		{
+			printf("%s\n","parent");
+			close(ipipe[1]);
+			dup2(ipipe[0],STDIN_FILENO);
+			execlp(arr[0],receiving,(char*)NULL);
+			printf("%s\n","parent done");
+		} else {
+			wait(0);
 		}
-	}
-	return str_input;
-}
-
-
-int piping(char* sending, char* receiving)
-{
-	int ipipe[2],status;
-	pid_t one;
-	one = fork();
-	if(one == 0)
-	{
-		dup2(ipipe[1],STDOUT_FILENO);
-		execlp(sending,sending,(char*)NULL);
-	}
-
-	one = fork();
-	if(one == 0)
-	{
+		close(ipipe[0]);
 		close(ipipe[1]);
-		dup2(ipipe[0],STDIN_FILENO);
-		execlp(receiving,receiving,(char*)NULL);
+		//waitpid(-1,&status,0);
+		//waitpid(-1,&status,0);
 	}
-	close(ipipe[0]);
-	close(ipipe[1]);
-
-	waitpid(-1,&status,0);
-	waitpid(-1,&status,0);
 	return 0;
 }
 
@@ -280,19 +293,24 @@ int runCMD() {
 		//printf("%s\n",tempArg[index]);
 		if (strcmp(tempArg[index],">") == 0){
 			needsPipe = true;
-			s = index+1;
-			r = index-1;
 		}
 		else if(strcmp(tempArg[index],"|") == 0){
 			needsPipe = true;
-			s = index - 1;
-			r = index + 1; 
 		}
 		index++;
 	}
 	if (needsPipe == true)
 	{
-		piping(tempArg[s],tempArg[r]);
+		//commented out to avoid crashing
+		//if a pipe is determined to be needed, run cmd will just return without doing anything
+		/*
+		char **pipes = (char**)malloc(sizeof(char)*200);
+		pipes = split(input, "|", pipes);
+		piping(pipes);
+		printf("%s\n", "piping exited");
+		free(pipes);
+		free(tempArg);
+		*/
 	}
 	else
 	{
@@ -302,6 +320,7 @@ int runCMD() {
 		char* p_str = (char*)malloc(sizeof(char)*100);
 
 		int size = sizeof(arr);
+		bool accessed = false;
 		
 		for(int i = 0; i < size; i++){
 			strcpy(p_str, arr[i]);
@@ -311,9 +330,15 @@ int runCMD() {
 			
 			if(access(p_str, X_OK) == 0){
 				tempArg[0] = p_str; //setting first argument to full path
+				accessed = true;
 				break;
 			}
 		}
+		if(accessed == false){
+			printf("%s\n", "Error, command not found");
+			return 1;
+		}
+
 		int pid = fork();
 		if(pid == 0){ //child
 			execv(p_str, tempArg);

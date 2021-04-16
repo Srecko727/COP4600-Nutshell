@@ -13,4 +13,4 @@ struct evTable varTable;
 struct aTable aliasTable;
 
 int aliasIndex, varIndex;
-char* subAliases(char* name, int len);
+char* subAliases(char* name);

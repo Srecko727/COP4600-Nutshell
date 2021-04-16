@@ -15,20 +15,18 @@ bool subbed = false;
 bool env = false;
 int arg_count = 0;
 char *checked_input = "";
-char* subAliases(char* name, int len){
+char* subAliases(char* name){
     char *first = strtok(name, " ");
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], first) == 0) {
-            //arg_count = 1;
             subbed = true;
             return aliasTable.word[i];
         }
     }
-    //arg_count = 2;
     subbed = false;
     return name;
 }
-bool ifAlias(char* name, int len){
+bool ifAlias(char* name){
     char *first = strtok(name, " ");
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], first) == 0) {
@@ -100,17 +98,18 @@ VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 <string_condition>{ANYCHAR}+    {yylval.string = strdup(expandENV(yytext, yyleng, true)); if(arg_count > 0){arg_count--;}; return STRING;}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
-
+[ ]                 { }
 bye                 { return BYE; }
 cd		            { running_cd = true; return CD; }
 alias		        { arg_count = 2; return ALIAS; }
 unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
 [\"]                { BEGIN(string_condition); }
-{VARSYMBOLS}        {   checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
-                        if(ifAlias(checked_input, yyleng)) {
-                            char *yycopy = strdup( subAliases(checked_input, yyleng) );
-                            for ( int i = strlen(subAliases(checked_input, yyleng)) - 1; i >= 0; --i )
+{VARSYMBOLS}        {   printf("%s\n", "symbols");
+                        checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
+                        if(ifAlias(checked_input) && check_unalias == false) {
+                            char *yycopy = strdup( subAliases(checked_input) );
+                            for ( int i = strlen(subAliases(checked_input)) - 1; i >= 0; --i )
                                 unput( yycopy[i] );
                             free( yycopy );
                         } else {
@@ -127,11 +126,11 @@ setenv              { env = true; return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
 ({NONBUILTIN}({ARGSYMBOLS}+{CHAR}*)*)        { yylval.string = strdup(yytext); return CMD; }
-{CHAR}+             {   if(ifAlias(yytext, yyleng) && running_cd == false && check_unalias == false && env == false && (arg_count == 0 || arg_count == 2 || subbed == true)) {
+{CHAR}+             {   if(ifAlias(yytext) && running_cd == false && check_unalias == false && env == false && (arg_count == 0 || arg_count == 2 || subbed == true)) {
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
-                           char *yycopy = strdup( subAliases(yytext, yyleng) );
-                           for ( int i = strlen(subAliases(yytext, yyleng)) - 1; i >= 0; --i )
+                           char *yycopy = strdup( subAliases(yytext) );
+                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
                                unput( yycopy[i] );
                            free( yycopy );
                     } else {
