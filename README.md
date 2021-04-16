@@ -45,7 +45,7 @@ While our non-built-in commands do work properly, we were not able to get either
 Wildcard Matching
 We attempted to implement wildcard matching with the glob function [10], but we were unsuccessful with implementing it because we had trouble understanding the glob and iglob functions fully. We tried to make the implementation similar to that of the environment variables function, but were unsucccessful and had to decide to leave this feature out as well.
 # Verification
-Once someone has unzipped our project they can varify that the functionmality works as specified by first using the command "make" to make all the required files for the shell. Then running the command "./nutshell" would start the program and our functionality can be verified from there. Once the shell is started, "[nutshell]>>" will be shown on the screen to indicate that our shell is still running until the "bye" command is run.
+Once someone has unzipped our project they can varify that the functionality works as specified by first using the command "make" to make all the required files for the shell. Then running the command "./nutshell" would start the program and our functionality can be verified from there. Once the shell is started, "[nutshell]>>" will be shown on the screen to indicate that our shell is still running until the "bye" command is run.
 # Citing
 [1]https://man7.org/linux/man-pages/man3/setenv.3.html
 [2]https://man7.org/linux/man-pages/man7/environ.7.html
