@@ -263,7 +263,7 @@ int piping(char* sending, char* receiving)
 		strcat(s_str, arr[0]);
 		strcat(r_str, arr[0]);
 		
-		if(access(p_str, X_OK) == 0){
+		if(access(s_str, X_OK) == 0){
 			arr[0] = s_str; //setting first argument to full path
 			break;
 		}
