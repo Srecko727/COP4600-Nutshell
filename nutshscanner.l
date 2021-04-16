@@ -16,11 +16,29 @@ bool env = false;
 bool nb = false;
 int arg_count = 0;
 char *checked_input = "";
-char* subAliases(char* name){
+
+char* subAliases(char* name, bool using_env){
     char *first = strtok(name, " ");
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], first) == 0) {
             subbed = true;
+            bool hasSpace = false;
+            int size = sizeof(aliasTable.word[i])/sizeof(aliasTable.word[i][0]);
+            char* withQuotes = (char*)malloc(sizeof(char)*(size+2));
+            for(int j = 0; j < size; j++){
+                if(aliasTable.word[i][j] == ' '){
+                    hasSpace = true;
+                }
+            }
+            //returning with quotation marks so the scanner doesn't separate the values
+            if(hasSpace == true && using_env == false) {
+                strncat(withQuotes, "\"", 1);
+                strcat(withQuotes, aliasTable.word[i]);
+                strncat(withQuotes, "\"", 1);
+                printf("quotes: %s\n", withQuotes);
+                return withQuotes;
+            }
+            free(withQuotes);
             return aliasTable.word[i];
         }
     }
@@ -43,19 +61,23 @@ char* expandENV(char* input, int len, bool inQuotes){
     bool varFound = false;
     int before_position = 0;
     int after_position = 0;
+    bool more_stuff = false;
     char open = '{';
     char close = '}';
     for(int i = 0; i < len; i++){
         if(varFound == true){
             if(input[i] == close){
-                after_position = i - 1;
+                if(i + 1 < len){
+                    more_stuff = true;
+                    after_position = i + 1;
+                }
                 break;
             }
             strncat(varName, &input[i], 1);
         }
         else if(input[i] == open){
             varFound = true;
-            before_position = i-2;
+            before_position = i-1;
         }
     }
     if(varFound == true){
@@ -67,11 +89,16 @@ char* expandENV(char* input, int len, bool inQuotes){
                 if(strcmp(varTable.var[i], varName) == 0){
                     free(varName);
                     strcat(output, varTable.word[i]);
-                    return output;
+                    if(more_stuff == false){
+                        return output;
+                    }
                 }
             }
             for(int i = after_position; i < len; i++){
-                strncat(output, &input[i], 1);
+                if(input[i] != '\"'){
+                    strncat(output, &input[i], 1);
+                }
+                return output;
             }
             return input;
         } else {
@@ -104,17 +131,17 @@ VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 <string_condition>{ANYCHAR}+    {yylval.string = strdup(expandENV(yytext, yyleng, true)); if(arg_count > 0){arg_count--;}; return STRING;}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
-[ ]                 { }
 bye                 { return BYE; }
 cd		            { running_cd = true; return CD; }
 alias		        { arg_count = 2; return ALIAS; }
 unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
 [\"]                { BEGIN(string_condition); }
-{VARSYMBOLS}        {   checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
+{VARSYMBOLS}        {   printf("%s\n", "symbols"); checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
                         if(ifAlias(checked_input) && check_unalias == false) {
-                            char *yycopy = strdup( subAliases(checked_input) );
-                            for ( int i = strlen(subAliases(checked_input)) - 1; i >= 0; --i )
+                            printf("curr_alias in here: %s\n", checked_input);
+                            char *yycopy = strdup( subAliases(checked_input, true) );
+                            for ( int i = strlen(subAliases(checked_input, true)) - 1; i >= 0; --i )
                                 unput( yycopy[i] );
                             free( yycopy );
                         } else {
@@ -133,11 +160,19 @@ printenv            { return PRINTENV; }
 ({NONBUILTIN}({ARGSYMBOLS}+{CHAR}*)*)        { yylval.string = strdup(expandENV(yytext, yyleng, true)); nb = true; return CMD; }
 {CHAR}+             {   if(ifAlias(yytext) && running_cd == false && check_unalias == false && env == false && nb == false && (arg_count == 0 || arg_count == 2 || subbed == true)) {
                         printf("yytext before sub: %s\n", yytext);
-                        // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
-                           char *yycopy = strdup( subAliases(yytext) );
-                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
-                               unput( yycopy[i] );
-                           free( yycopy );
+                            // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
+                            // if there are no spaces, it is calling an alias
+                            if(strcmp(yytext, strtok(yytext, " ")) == 0) {
+                                char *yycopy = strdup( subAliases(yytext, true) );
+                                for ( int i = strlen(subAliases(yytext, true)) - 1; i >= 0; --i )
+                                    unput( yycopy[i] );
+                                free( yycopy );
+                            } else {
+                                char *yycopy = strdup( subAliases(yytext, false) );
+                                for ( int i = strlen(subAliases(yytext, false)) - 1; i >= 0; --i )
+                                    unput( yycopy[i] );
+                                free( yycopy );
+                            }
                     } else {
                         printf("yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
