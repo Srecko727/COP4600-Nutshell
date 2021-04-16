@@ -116,7 +116,6 @@ int runPrintenv()
 
 int runUnsetenv(char *var)
 {
-	printf("%s", var);
 	if(strcmp(var, "HOME") == 0) {
 		printf("\n%s\n", "Cannot unset HOME environment variable");
 	} 
@@ -149,6 +148,10 @@ int runSetAlias(char *name, char *word) {
 			return 1;
 		}
 		else if((strcmp(aliasTable.name[i], name) == 0) && (strcmp(aliasTable.word[i], word) == 0)){
+			printf("Error, expansion of \"%s\" would create a loop.\n", name);
+			return 1;
+		}
+		else if((strcmp(aliasTable.name[i], word) == 0) && (strcmp(aliasTable.word[i], name) == 0)){
 			printf("Error, expansion of \"%s\" would create a loop.\n", name);
 			return 1;
 		}

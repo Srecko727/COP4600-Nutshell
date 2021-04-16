@@ -10,15 +10,22 @@
 
 //#define unput(c) {yytchar= (c); if(yytchar=='\n') {yylineno--; *yysptr++=yytchar;}
 bool check_unalias = false;
+bool running_cd = false;
+bool subbed = false;
+bool env = false;
 int arg_count = 0;
 char *checked_input = "";
 char* subAliases(char* name, int len){
     char *first = strtok(name, " ");
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], first) == 0) {
+            //arg_count = 1;
+            subbed = true;
             return aliasTable.word[i];
         }
     }
+    //arg_count = 2;
+    subbed = false;
     return name;
 }
 bool ifAlias(char* name, int len){
@@ -28,6 +35,7 @@ bool ifAlias(char* name, int len){
             return true;
         }
     }
+    arg_count = 2;
     return false;
 }
 char* expandENV(char* input, int len, bool inQuotes){
@@ -89,12 +97,12 @@ VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 %x string_condition
 %%
 
-<string_condition>{ANYCHAR}+    {yylval.string = strdup(expandENV(yytext, yyleng, true)); arg_count--; return STRING;}
+<string_condition>{ANYCHAR}+    {yylval.string = strdup(expandENV(yytext, yyleng, true)); if(arg_count > 0){arg_count--;}; return STRING;}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
 
 bye                 { return BYE; }
-cd		            { arg_count = 1; return CD; }
+cd		            { running_cd = true; return CD; }
 alias		        { arg_count = 2; return ALIAS; }
 unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
@@ -115,11 +123,11 @@ unalias             { check_unalias = true; return UNALIAS; }
                             return STRING;
                             };
                         }
-setenv              { arg_count = 2; return SETENV; }
+setenv              { env = true; return SETENV; }
 unsetenv            { return UNSETENV; }
 printenv            { return PRINTENV; }
 ({NONBUILTIN}({ARGSYMBOLS}+{CHAR}*)*)        { yylval.string = strdup(yytext); return CMD; }
-{CHAR}+             {if(ifAlias(yytext, yyleng) && check_unalias == false && (arg_count == 0 || arg_count == 2)) {
+{CHAR}+             {   if(ifAlias(yytext, yyleng) && running_cd == false && check_unalias == false && env == false && (arg_count == 0 || arg_count == 2 || subbed == true)) {
                         printf("yytext before sub: %s\n", yytext);
                         // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                            char *yycopy = strdup( subAliases(yytext, yyleng) );
@@ -130,6 +138,7 @@ printenv            { return PRINTENV; }
                         printf("yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
                         check_unalias = false;
+                        running_cd = false;
                         if(arg_count > 0){
                             arg_count--; //arg_count will be 1 after first one is checked
                         }
