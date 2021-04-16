@@ -2,10 +2,11 @@
 # Rebecca Boes (1450-1929)/Srecko Markovic (1108-0530)
 
 # Description
-Our project somewhat acomplishes the goals of writing a command interpreter for a Korn shell-like command language in C using Lex and Yac running under Unix. Our project parses through command lines and executes some appropriate commands.
+Our Nutshell Term Project somewhat accomplishes the goals of writing a command interpreter for a Korn shell-like command language in C using Lex and Yacc running under Unix. It scans and parses through command line inputs and executes most required commands.
+
 # Declaration of Team Member work
 Rebecca Boes=RB / Srecko Markovic=SM
-Built-in Commands - RB and SM along with Michaels original code
+Built-in Commands - RB and SM along with Michael's original code
 Non-built-in Commands - RB
 Redirecting I/O with Non-built-in Commands - SM
 Using Pipes with Non-built-in Commands - RB and SM
@@ -19,33 +20,35 @@ Error Handling and Reporting (potential point deduction) - RB and SM
 README (potential point deduction) - RB and SM
 Tilde Expansion (Extra Credit) - N/A
 File Name Completion (Extra Credit) - N/A
+
 # Design
-### implemented
+### Implemented Features
 Built-in Commands
-For setenv we used [1] to understand the setenv function and after we used the command we had to update the Variable table.
-For printenv we used [2] to understand the environ function.
-For unsetenv we used [3] to understand the unsetenv function and after we used the command we had to update the Variable table.
-For CD it was given to us by Michaels code, which was very helpful in understanding how it worked.
-For all the alias functions they were given to us by Michaels code, which was very helpful in understanding how it worked. What we added to it: made it match on the first word rather than all the words.
-For bye it was given to us by Michaels code, which was very helpful in understanding how it worked.
+For setenv, we used [1] to understand the setenv function and after we used the command to create or update the specified environment variable we updated the variable table to include the change.
+For printenv, we used [2] to understand the environ function and printed all the variables.
+For unsetenv, we used [3] to understand the unsetenv function and after we used the command we had updated the variable table to no longer store the unset variable.
+CD it was given to us by Michael's starter code, which was very helpful in understanding how it worked.
+The alias function to set a new alias was also given in Michael's starter code. In addition to it we added a case where there were no arguments that printed all the current aliases as well as implememnted the unalias command which removed the given alias name and its word from the alias table. What we added to it: made it match on the first word rather than all the words.
+Alias expansion was mostly given to us as well, but we modified the given code to only match on the first word rather than all words.
+Bye was the last command given to us from the starter code and it is used to exit the shell.
+
 Non-built-in Commands
-they all work within nutshparser.y in our runCMD command, it splits the input up into an array of words and then it gets what the command was from the first word and then it splits up the environment variable path and apends the first word to every element of ./ than it checks if each path can be accessed and then execv is used [4]
+For the non-built-in commands we had to hard code the values on the scanner side because we were unsure of how to make them match the inputs with reqular expressions since we already had one matching to any character to handle when the user wanted to use an alias. In our parser, all non-built-in commands work in our runCMD function. First, the input is split into an array of words and the PATH environment variable is also split up into its components. Knowing the first word is the command it will be looking for, it is then appended with a slash to each compenent of the path variable. Then, each of those paths are checked to look for one that can be accessed. The accessible path is then passed into execv [4] along with the rest of the arguments to execute the non-built-in command.
+ 
 Environment Variable Expansion
-we created a function in our scanner to detect when the variables were used with "{}"........
-Alias Expansion
-............
-Wildcard Matching
-..............
-### partialy implemented
+To implement the environment variable expansion, we created a function that looked for curly braces within the input to determine if the user was trying to use a variable and then return the correct value from the variable table. This was done by appending the characters between the braces to get the name of the variable, then returning the value at that variable. If there is no match, it returns the input back.
+
+### Partially Implemented Features
 Using Pipes with Non-built-in Commands
-we split the input into words and looked through the iumput for "|" if there was one it was split based on pipes so that we could recieve an array of pipes. we went through the array of pipes with [8]. we split with a delimetor of pipes and from there we also split up the path to find if the imputs are both executables and from there we use execlp[9] to call the functions. we werent able to get it to fully work.
-### not implemented
+In trying to implement this, we looped through the input for "|" to determine if piping was needed. If so, the input would then be split based on a "|" delimiter to give an array of pipes. We went through the array of pipes with [8] and for each we split the path similar to what was done with the non-built-in commands. We checked for if the path/command combinations were executable, similar to the non-built-ins, and from there we used execlp [9] to call the functions. Unfortunately, we were unable to make this work.
+
+### Not Implemented Features
 Redirecting I/O with Non-built-in Commands
-We attempted to implement this with [5] [6] [7] but we could not get our shell to recognize the multiple pipes even after the multiple tutorials.
+We attempted to implement I/O redirection with [5] [6] [7] but we could not get our shell to recognize the multiple pipes even after going through documentation and watching many tutorials.
 Using both Pipes and I/O Redirection, combined, with Non-built-in Commands
-We attempted to do this along with Redirecting I/O with Non-built-in Commands and Using Pipes with Non-built-in Commands but we were not able to figure it out.
+With our piping being only partially implemented and not working for us and our I/O redirection not being implemented at all, we were unable to combine the two since we could not get them to work on their own.
 # Verification
-Once someone has unzipped our project they can varify that the functionmality works as specified first do the command "make" to make all the required files for the shell and then do the command "./nutshell" to start the program. After this command "[nutshell]>>" will be on the screen and the user will be able to type their desired commands.
+Once someone has unzipped our project they can varify that the functionmality works as specified by first using the command "make" to make all the required files for the shell. Then running the command "./nutshell" would start the program and our functionality can be verified from there. Once the shell is started, "[nutshell]>>" will be shown on the screen to indicate that our shell is still running until the "bye" command is run.
 # Citing
 [1]https://man7.org/linux/man-pages/man3/setenv.3.html
 [2]https://man7.org/linux/man-pages/man7/environ.7.html
