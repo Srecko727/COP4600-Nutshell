@@ -46,14 +46,16 @@ char* subAliases(char* name, bool using_env){
     subbed = false;
     return name;
 }
-bool ifAlias(char* name){
+bool ifAlias(char* name, bool setting_env){
     char *first = strtok(name, " ");
     for (int i = 0; i < aliasIndex; i++) {
         if(strcmp(aliasTable.name[i], first) == 0) {
             return true;
         }
     }
-    arg_count = 2;
+    if(setting_env == false){
+        arg_count = 2;
+    }
     return false;
 }
 char* expandENV(char* input, int len, bool inQuotes){
@@ -123,7 +125,7 @@ char* expandENV(char* input, int len, bool inQuotes){
 CHAR                [:.A-Za-z0-9!\/_-][:.A-Za-z0-9!\/_-]*
 ANYCHAR             [:}{)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(:*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
 NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
-ARGSYMBOLS          [.!\/_\"'}{$ -]
+ARGSYMBOLS          [.!\/_\"'}{$ |><-]
 VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 
 %x string_condition
@@ -139,13 +141,13 @@ unalias             { check_unalias = true; arg_count = 1; return UNALIAS; }
 "\n"		        { arg_count = 0; return END; }
 [\"]                { BEGIN(string_condition); }
 {VARSYMBOLS}        {   checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
-                        if(ifAlias(checked_input) && check_unalias == false) {
+                        if(ifAlias(checked_input, env) && check_unalias == false) {
                             char *yycopy = strdup( subAliases(checked_input, true) );
                             for ( int i = strlen(subAliases(checked_input, true)) - 1; i >= 0; --i )
                                 unput( yycopy[i] );
                             free( yycopy );
                         } else {
-                            printf("yytext: %s\n", yytext);
+                            //printf("yytext: %s\n", yytext);
                             yylval.string = checked_input;
                             check_unalias = false;
                             if(arg_count > 0){
@@ -158,15 +160,14 @@ setenv              { env = true; arg_count = 2; return SETENV; }
 unsetenv            { arg_count = 1; return UNSETENV; }
 printenv            { arg_count = 0; return PRINTENV; }
 ({NONBUILTIN}({ARGSYMBOLS}+{CHAR}*)*)        { yylval.string = strdup(expandENV(yytext, yyleng, true)); nb = true; return CMD; }
-{CHAR}+             {   if(ifAlias(yytext) && running_cd == false && check_unalias == false && env == false && nb == false && (arg_count == 0 || arg_count == 2 || subbed == true)) {
-                        printf("yytext before sub: %s\n", yytext);
+{CHAR}+             {   if(ifAlias(yytext, env) && running_cd == false && check_unalias == false && env == false && nb == false && (arg_count == 0 || arg_count == 2 || subbed == true)) {
+                        //printf("yytext before sub: %s\n", yytext);
                             // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                             // if there are no spaces, it is calling an alias
                             if(arg_count == 0){
                                 setting_alias = false;
                             }
                             if(strcmp(yytext, strtok(yytext, " ")) == 0 && setting_alias == true) {
-                                printf("%s\n", "setting alias true with no spaces");
                                 char *yycopy = strdup( subAliases(yytext, false) );
                                 for ( int i = strlen(subAliases(yytext, false)) - 1; i >= 0; --i )
                                     unput( yycopy[i] );
@@ -175,29 +176,29 @@ printenv            { arg_count = 0; return PRINTENV; }
                                 setting_alias = false;
                             }
                             else if(strcmp(yytext, strtok(yytext, " ")) == 0){
-                                //printf("%s\n", "not setting alias and no spaces");
                                 char *yycopy = strdup( subAliases(yytext, true) );
                                 for ( int i = strlen(subAliases(yytext, true)) - 1; i >= 0; --i )
                                     unput( yycopy[i] );
                                 free( yycopy );
                             } else {
-                                //printf("%s\n", "in the else");
                                 char *yycopy = strdup( subAliases(yytext, false) );
                                 for ( int i = strlen(subAliases(yytext, false)) - 1; i >= 0; --i )
                                     unput( yycopy[i] );
                                 free( yycopy );
                             }
                     } else {
-                        printf("yytext: %s\n", yytext);
+                        //printf("yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
                         check_unalias = false;
                         running_cd = false;
                         nb = false;
                         if(arg_count > 0){
+                            
                             arg_count--; //arg_count decremented after it's used
                         }
                         if(arg_count == 0){
                             setting_alias = false;
+                            env = false;
                         }
                         return STRING;
                         };
