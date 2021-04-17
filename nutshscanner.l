@@ -171,6 +171,8 @@ printenv            { arg_count = 0; return PRINTENV; }
                                 for ( int i = strlen(subAliases(yytext, false)) - 1; i >= 0; --i )
                                     unput( yycopy[i] );
                                 free( yycopy );
+                                //if setting was true, sets it to false after the first path
+                                setting_alias = false;
                             }
                             else if(strcmp(yytext, strtok(yytext, " ")) == 0){
                                 //printf("%s\n", "not setting alias and no spaces");
