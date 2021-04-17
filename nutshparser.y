@@ -222,8 +222,6 @@ int piping(char **pipes)
 		sending = pipes[index-1];
 		receiving = pipes[index];
 	
-		printf("sending: %s\n", "sending");
-		printf("receiving: %s\n", "receiving");
 		int ipipe[2],status;
 		pid_t one;
 		char **arr = (char**)malloc(sizeof(char)*500);
@@ -257,19 +255,19 @@ int piping(char **pipes)
 		if(one == 0)
 		{
 			close(ipipe[0]);
-			printf("%s\n","child");
+			//printf("%s\n","child");
 			dup2(ipipe[1],STDOUT_FILENO);
 			execlp(arr[0],sending,(char*)NULL);
-			printf("%s\n","child done");
+			//printf("%s\n","child done");
 		}
 		
 		if(one > 0)
 		{
-			printf("%s\n","parent");
+			//printf("%s\n","parent");
 			close(ipipe[1]);
 			dup2(ipipe[0],STDIN_FILENO);
 			execlp(arr[0],receiving,(char*)NULL);
-			printf("%s\n","parent done");
+			//printf("%s\n","parent done");
 		} else {
 			wait(0);
 		}
@@ -290,7 +288,6 @@ int runCMD() {
 	int s, r, index = 0;
 	while(tempArg[index] != NULL)
 	{
-		//printf("%s\n",tempArg[index]);
 		if (strcmp(tempArg[index],">") == 0){
 			needsPipe = true;
 		}
@@ -335,7 +332,7 @@ int runCMD() {
 			}
 		}
 		if(accessed == false){
-			printf("%s\n", "Error, command not found");
+			printf("%s\n", "Error, command was not accessible");
 			return 1;
 		}
 

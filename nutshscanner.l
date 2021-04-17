@@ -14,6 +14,7 @@ bool running_cd = false;
 bool subbed = false;
 bool env = false;
 bool nb = false;
+bool setting_alias = false;
 int arg_count = 0;
 char *checked_input = "";
 
@@ -25,6 +26,7 @@ char* subAliases(char* name, bool using_env){
             bool hasSpace = false;
             int size = sizeof(aliasTable.word[i])/sizeof(aliasTable.word[i][0]);
             char* withQuotes = (char*)malloc(sizeof(char)*(size+2));
+            //looks for spaces but ignores first and last elements
             for(int j = 0; j < size; j++){
                 if(aliasTable.word[i][j] == ' '){
                     hasSpace = true;
@@ -35,7 +37,6 @@ char* subAliases(char* name, bool using_env){
                 strncat(withQuotes, "\"", 1);
                 strcat(withQuotes, aliasTable.word[i]);
                 strncat(withQuotes, "\"", 1);
-                printf("quotes: %s\n", withQuotes);
                 return withQuotes;
             }
             free(withQuotes);
@@ -133,13 +134,12 @@ VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 
 bye                 { return BYE; }
 cd		            { running_cd = true; return CD; }
-alias		        { arg_count = 2; return ALIAS; }
+alias		        { arg_count = 2; setting_alias = true; return ALIAS; }
 unalias             { check_unalias = true; return UNALIAS; }
 "\n"		        { return END; }
 [\"]                { BEGIN(string_condition); }
-{VARSYMBOLS}        {   printf("%s\n", "symbols"); checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
+{VARSYMBOLS}        {   checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
                         if(ifAlias(checked_input) && check_unalias == false) {
-                            printf("curr_alias in here: %s\n", checked_input);
                             char *yycopy = strdup( subAliases(checked_input, true) );
                             for ( int i = strlen(subAliases(checked_input, true)) - 1; i >= 0; --i )
                                 unput( yycopy[i] );
@@ -162,7 +162,7 @@ printenv            { return PRINTENV; }
                         printf("yytext before sub: %s\n", yytext);
                             // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                             // if there are no spaces, it is calling an alias
-                            if(strcmp(yytext, strtok(yytext, " ")) == 0) {
+                            if(strcmp(yytext, strtok(yytext, " ")) == 0 && setting_alias == false) {
                                 char *yycopy = strdup( subAliases(yytext, true) );
                                 for ( int i = strlen(subAliases(yytext, true)) - 1; i >= 0; --i )
                                     unput( yycopy[i] );
@@ -181,6 +181,9 @@ printenv            { return PRINTENV; }
                         nb = false;
                         if(arg_count > 0){
                             arg_count--; //arg_count will be 1 after first one is checked
+                        }
+                        if(arg_count == 0){
+                            setting_alias = false;
                         }
                         return STRING;
                         };
