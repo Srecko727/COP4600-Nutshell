@@ -86,7 +86,9 @@ char* expandENV(char* input, int len, bool inQuotes){
     if(varFound == true){
         if(inQuotes == true){
             for(int i = 0; i < before_position; i++){
-                strncat(output, &input[i], 1);
+                if(input[i] != '\"'){
+                    strncat(output, &input[i], 1);
+                }
             }
             for(int i = 0; i < varIndex; i++){
                 if(strcmp(varTable.var[i], varName) == 0){
@@ -124,7 +126,7 @@ char* expandENV(char* input, int len, bool inQuotes){
 
 CHAR                [:.A-Za-z0-9!\/_-][:.A-Za-z0-9!\/_-]*
 ANYCHAR             [:}{)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(:*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
-NONBUILTIN          ls|pwd|cat|echo|ssh|date|ping|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
+NONBUILTIN          ls|pwd|cat|echo|ssh|date|rm|tty|touch|mkdir|rmdir|sort|wc|head|tail|rev|less
 ARGSYMBOLS          [.!\/_\"'}{$ |><-]
 VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 
