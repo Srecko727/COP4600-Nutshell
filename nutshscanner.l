@@ -133,10 +133,10 @@ VARSYMBOLS          $\{[.A-Za-z0-9!\/_-]+\}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
 bye                 { return BYE; }
-cd		            { running_cd = true; return CD; }
+cd		            { running_cd = true; arg_count = 1; return CD; }
 alias		        { arg_count = 2; setting_alias = true; return ALIAS; }
-unalias             { check_unalias = true; return UNALIAS; }
-"\n"		        { return END; }
+unalias             { check_unalias = true; arg_count = 1; return UNALIAS; }
+"\n"		        { arg_count = 0; return END; }
 [\"]                { BEGIN(string_condition); }
 {VARSYMBOLS}        {   checked_input = expandENV(yytext, yyleng, false); arg_count = 0;
                         if(ifAlias(checked_input) && check_unalias == false) {
@@ -154,20 +154,32 @@ unalias             { check_unalias = true; return UNALIAS; }
                             return STRING;
                             };
                         }
-setenv              { env = true; return SETENV; }
-unsetenv            { return UNSETENV; }
-printenv            { return PRINTENV; }
+setenv              { env = true; arg_count = 2; return SETENV; }
+unsetenv            { arg_count = 1; return UNSETENV; }
+printenv            { arg_count = 0; return PRINTENV; }
 ({NONBUILTIN}({ARGSYMBOLS}+{CHAR}*)*)        { yylval.string = strdup(expandENV(yytext, yyleng, true)); nb = true; return CMD; }
 {CHAR}+             {   if(ifAlias(yytext) && running_cd == false && check_unalias == false && env == false && nb == false && (arg_count == 0 || arg_count == 2 || subbed == true)) {
                         printf("yytext before sub: %s\n", yytext);
                             // source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                             // if there are no spaces, it is calling an alias
-                            if(strcmp(yytext, strtok(yytext, " ")) == 0 && setting_alias == false) {
+                            if(arg_count == 0){
+                                setting_alias = false;
+                            }
+                            if(strcmp(yytext, strtok(yytext, " ")) == 0 && setting_alias == true) {
+                                printf("%s\n", "setting alias true with no spaces");
+                                char *yycopy = strdup( subAliases(yytext, false) );
+                                for ( int i = strlen(subAliases(yytext, false)) - 1; i >= 0; --i )
+                                    unput( yycopy[i] );
+                                free( yycopy );
+                            }
+                            else if(strcmp(yytext, strtok(yytext, " ")) == 0){
+                                //printf("%s\n", "not setting alias and no spaces");
                                 char *yycopy = strdup( subAliases(yytext, true) );
                                 for ( int i = strlen(subAliases(yytext, true)) - 1; i >= 0; --i )
                                     unput( yycopy[i] );
                                 free( yycopy );
                             } else {
+                                //printf("%s\n", "in the else");
                                 char *yycopy = strdup( subAliases(yytext, false) );
                                 for ( int i = strlen(subAliases(yytext, false)) - 1; i >= 0; --i )
                                     unput( yycopy[i] );
@@ -180,7 +192,7 @@ printenv            { return PRINTENV; }
                         running_cd = false;
                         nb = false;
                         if(arg_count > 0){
-                            arg_count--; //arg_count will be 1 after first one is checked
+                            arg_count--; //arg_count decremented after it's used
                         }
                         if(arg_count == 0){
                             setting_alias = false;
